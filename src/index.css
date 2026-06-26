@@ -1,0 +1,202 @@
+/* ═══════════════════════════════════════════════════════════
+   SAIS CREATION — Warm Luxury Theme · Modern Atelier Edition
+   Soft radii · layered depth · same brand palette
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Jost:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
+@import "tailwindcss";
+
+/* ── 1. Palette as CSS variables ─────────────────────────── */
+:root {
+  --ivory:      #FBF7F0;   /* main background                  */
+  --champagne:  #F3EADC;   /* alt sections / soft fills        */
+  --burgundy:   #7B2D43;   /* primary accent — buttons         */
+  --burgundy-d: #6A2438;   /* darker burgundy (gradient ends)  */
+  --rose-gold:  #D9A5A0;   /* secondary accent — details       */
+  --rose-light: #F2D9D2;   /* light blush (dark-section text)  */
+  --bronze:     #B07D3F;   /* luxury lines, icons, prices      */
+  --bronze-l:   #E2BF7E;   /* light bronze (shimmer highlight) */
+  --bronze-d:   #8C5A2B;   /* deep bronze (shimmer edge)       */
+  --espresso:   #2B2118;   /* body text                        */
+  --deep-wine:  #3B1F2B;   /* dark contrast sections           */
+  --wine-dark:  #2E1822;   /* footer / overlays                */
+  --whatsapp-1: #1d8a4a;   /* WhatsApp button gradient start   */
+  --whatsapp-2: #25b35e;   /* WhatsApp button gradient end     */
+
+  /* Depth system — wine-tinted layered shadows */
+  --shadow-sm:   0 2px 10px rgba(59, 31, 43, 0.06);
+  --shadow-md:   0 6px 18px rgba(59, 31, 43, 0.07), 0 16px 40px -12px rgba(59, 31, 43, 0.12);
+  --shadow-lg:   0 12px 28px rgba(59, 31, 43, 0.08), 0 32px 72px -16px rgba(59, 31, 43, 0.2);
+  --shadow-glow: 0 12px 36px -10px rgba(123, 45, 67, 0.5);
+}
+
+/* ── 2. Base ─────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--ivory);
+  color: var(--espresso);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection { background: rgba(217, 165, 160, 0.45); color: var(--deep-wine); }
+
+/* ── 3. Typography roles ─────────────────────────────────── */
+.font-display { font-family: 'Cormorant Garamond', serif; } /* headings   */
+.font-accent  { font-family: 'Jost', sans-serif; }          /* labels/nav */
+.font-body    { font-family: 'Lora', serif; }               /* paragraphs */
+
+/* ── 4. Shimmer text effects ─────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Bronze shimmer — use on light (ivory/champagne) backgrounds */
+.bronze-shimmer {
+  background: linear-gradient(110deg,
+    var(--bronze-d) 20%, var(--bronze-l) 40%,
+    var(--bronze)   55%, var(--bronze-l) 70%,
+    var(--bronze-d) 85%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 5s linear infinite;
+}
+
+/* Blush shimmer — use on dark (deep wine) backgrounds */
+.blush-shimmer {
+  background: linear-gradient(110deg,
+    #C98F89 20%, var(--rose-light) 40%,
+    var(--rose-gold) 55%, var(--rose-light) 70%,
+    #C98F89 85%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 5s linear infinite;
+}
+
+/* ── 5. Floating rose-gold dust (hero particles) ─────────── */
+@keyframes float-up {
+  0%   { transform: translateY(0) scale(1);       opacity: 0;   }
+  15%  {                                          opacity: .55; }
+  85%  {                                          opacity: .3;  }
+  100% { transform: translateY(-110vh) scale(.4); opacity: 0;   }
+}
+
+.rose-particle {
+  position: absolute;
+  bottom: -10px;
+  border-radius: 9999px;
+  background: radial-gradient(circle,
+    rgba(217, 165, 160, .9),
+    rgba(176, 125, 63, .25));
+  animation: float-up linear infinite;
+  pointer-events: none;
+}
+
+/* ── 6. Shine sweep (buttons & product cards on hover) ───── */
+@keyframes shine-sweep {
+  0%   { transform: translateX(-150%) skewX(-20deg); }
+  100% { transform: translateX( 250%) skewX(-20deg); }
+}
+.group:hover .shine { animation: shine-sweep .9s ease forwards; }
+
+/* ── 7. Marquee strip (deep wine event-types ribbon) ─────── */
+@keyframes marquee {
+  0%   { transform: translateX(0);     }
+  100% { transform: translateX(-50%); }
+}
+.marquee-track { animation: marquee 28s linear infinite; }
+
+/* ── 8. Hidden scrollbars (mobile service-card carousel) ─── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── 9. Grain overlay — adds tactile texture to sections ─── */
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+.grain-strong { opacity: 0.09; }
+
+/* ── 10. Soft pulse for status dots ──────────────────────── */
+@keyframes soft-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1;  }
+  50%      { transform: scale(1.6); opacity: .35; }
+}
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: inherit;
+  animation: soft-pulse 2.2s ease-in-out infinite;
+}
+
+/* ── 11. Slow rotation (ornamental rings) ────────────────── */
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+.spin-slow { animation: spin-slow 26s linear infinite; }
+
+/* ── 12. Luxury form fields (Contact section) ────────────── */
+.lux-field {
+  width: 100%;
+  background: #FFFFFF;
+  border: 1px solid rgba(176, 125, 63, 0.25);   /* bronze 25% */
+  border-radius: 9999px;
+  color: var(--espresso);
+  font-family: 'Lora', serif;
+  font-size: 15px;
+  padding: 15px 22px 15px 50px;                 /* room for icon */
+  outline: none;
+  box-shadow: var(--shadow-sm);
+  transition: border-color .35s ease, box-shadow .35s ease, background-color .35s ease;
+}
+
+.lux-field::placeholder {
+  color: rgba(43, 33, 24, 0.35);
+  font-style: italic;
+}
+
+.lux-field:focus {
+  border-color: rgba(123, 45, 67, 0.55);        /* burgundy 55% */
+  box-shadow: 0 0 0 4px rgba(123, 45, 67, 0.08), 0 10px 30px rgba(59, 31, 43, 0.1);
+}
+
+textarea.lux-field {
+  border-radius: 22px;
+  padding-left: 22px;
+  resize: vertical;
+  min-height: 130px;
+}
+
+select.lux-field {
+  appearance: none;
+  cursor: pointer;
+}
+
+/* ── 13. Accessibility: reduced motion ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .bronze-shimmer,
+  .blush-shimmer,
+  .rose-particle,
+  .marquee-track,
+  .shine,
+  .pulse-dot::after,
+  .spin-slow {
+    animation: none !important;
+  }
+  html { scroll-behavior: auto; }
+}

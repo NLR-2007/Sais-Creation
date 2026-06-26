@@ -1,0 +1,429 @@
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { db, storage } from '../../config/firebase'
+import {
+  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, query,
+} from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+import {
+  Package, Plus, Pencil, Trash2, X, Save, Upload, Search, Tag,
+} from 'lucide-react'
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+}
+
+const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '' }
+
+export default function Products() {
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const [form, setForm] = useState(EMPTY_PRODUCT)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [categories, setCategories] = useState([])
+
+  const fetchProducts = async () => {
+    try {
+      const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'))
+      const snap = await getDocs(q)
+      setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    } catch {
+      setProducts([])
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'))
+        const snap = await getDocs(q)
+        if (!cancelled) setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      } catch {
+        if (!cancelled) setProducts([])
+      }
+      try {
+        const cq = query(collection(db, 'categories'), orderBy('order', 'asc'))
+        const csnap = await getDocs(cq)
+        if (!cancelled) setCategories(csnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      } catch { /* no categories yet */ }
+      if (!cancelled) setLoading(false)
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  const openCreate = () => {
+    setEditing(null)
+    setForm(EMPTY_PRODUCT)
+    setImageFile(null)
+    setImagePreview('')
+    setModalOpen(true)
+  }
+
+  const openEdit = (product) => {
+    setEditing(product)
+    setForm({ name: product.name, desc: product.desc, price: product.price, tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '' })
+    setImageFile(null)
+    setImagePreview(product.imageUrl || '')
+    setModalOpen(true)
+  }
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
+  const handleSave = async (e) => {
+    e.preventDefault()
+    if (!form.name.trim() || !form.price.trim()) return
+    setSaving(true)
+
+    try {
+      let imageUrl = form.imageUrl
+
+      if (imageFile) {
+        const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`)
+        await uploadBytes(storageRef, imageFile)
+        imageUrl = await getDownloadURL(storageRef)
+      }
+
+      const data = {
+        name: form.name.trim(),
+        desc: form.desc.trim(),
+        price: form.price.trim(),
+        tag: form.tag.trim(),
+        imageUrl,
+        categoryId: form.categoryId || '',
+      }
+
+      if (editing) {
+        await updateDoc(doc(db, 'products', editing.id), { ...data, updatedAt: serverTimestamp() })
+      } else {
+        await addDoc(collection(db, 'products'), { ...data, createdAt: serverTimestamp() })
+      }
+
+      await fetchProducts()
+      setModalOpen(false)
+    } catch (err) {
+      alert('Error saving product: ' + err.message)
+    }
+    setSaving(false)
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      const product = products.find((p) => p.id === id)
+      if (product?.imageUrl) {
+        try {
+          const imgRef = ref(storage, product.imageUrl)
+          await deleteObject(imgRef)
+        } catch { /* image may not exist in storage */ }
+      }
+      await deleteDoc(doc(db, 'products', id))
+      await fetchProducts()
+    } catch (err) {
+      alert('Error deleting product: ' + err.message)
+    }
+    setDeleteConfirm(null)
+  }
+
+  const filtered = products.filter((p) =>
+    p.name?.toLowerCase().includes(search.toLowerCase()) ||
+    p.desc?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7B2D43] to-[#5C1F31] flex items-center justify-center shadow-[0_6px_18px_-6px_rgba(123,45,67,0.4)]">
+            <Package className="w-5 h-5 text-[#FBF7F0]" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h1 className="font-display text-2xl md:text-3xl font-semibold text-[#2B2118]">Products</h1>
+            <p className="font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F]">
+              {products.length} total products
+            </p>
+          </div>
+        </div>
+        <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.2em] uppercase px-6 py-3 shadow-[0_8px_24px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_14px_36px_-8px_rgba(123,45,67,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-400">
+          <Plus className="w-4 h-4" strokeWidth={2} />
+          Add Product
+        </button>
+      </motion.div>
+
+      {/* Search */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mb-6">
+        <div className="relative max-w-sm">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B07D3F]" strokeWidth={1.5} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search products..."
+            className="w-full bg-white border border-[#B07D3F]/15 rounded-full py-3 pl-11 pr-4 font-body text-sm text-[#2B2118] placeholder:text-[#2B2118]/30 outline-none shadow-[var(--shadow-sm)] focus:border-[#7B2D43]/40 focus:shadow-[0_0_0_4px_rgba(123,45,67,0.06)] transition-all duration-300"
+          />
+        </div>
+      </motion.div>
+
+      {/* Products grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-[1.5rem] border border-[#B07D3F]/10 p-5 animate-pulse">
+              <div className="w-full h-40 bg-[#F3EADC] rounded-[1rem] mb-4" />
+              <div className="h-5 bg-[#F3EADC] rounded-full w-2/3 mb-2" />
+              <div className="h-4 bg-[#F3EADC] rounded-full w-1/2" />
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20">
+          <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-[#F3EADC]/80 border border-[#B07D3F]/15 flex items-center justify-center">
+            <Package className="w-7 h-7 text-[#B07D3F]/30" strokeWidth={1} />
+          </div>
+          <p className="font-body italic text-[#2B2118]/40 mb-2">
+            {search ? 'No products match your search' : 'No products yet'}
+          </p>
+          {!search && (
+            <button onClick={openCreate} className="font-accent text-[12px] tracking-[0.15em] text-[#7B2D43] underline underline-offset-4 decoration-[#7B2D43]/30 hover:decoration-[#7B2D43]/70 transition-colors duration-300">
+              Add your first product
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtered.map((product) => (
+            <motion.div
+              key={product.id}
+              variants={fadeUp} initial="hidden" animate="visible"
+              className="group relative bg-white rounded-[1.5rem] border border-[#B07D3F]/10 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-1 transition-all duration-500 overflow-hidden"
+            >
+              {/* Image */}
+              <div className="relative h-44 bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/50 overflow-hidden">
+                {product.imageUrl ? (
+                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="w-10 h-10 text-[#B07D3F]/20" strokeWidth={1} />
+                  </div>
+                )}
+                {product.tag && (
+                  <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#7B2D43] text-[#FBF7F0] font-accent font-light text-[9px] tracking-[0.2em] uppercase shadow-[0_4px_12px_-4px_rgba(123,45,67,0.5)]">
+                    <Tag className="w-2.5 h-2.5" strokeWidth={1.5} />
+                    {product.tag}
+                  </span>
+                )}
+                {/* Actions overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#2E1822]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400 flex items-end justify-end p-3 gap-2">
+                  <button
+                    onClick={() => openEdit(product)}
+                    className="p-2.5 rounded-xl bg-white/90 backdrop-blur-sm text-[#7B2D43] hover:bg-white shadow-[var(--shadow-sm)] transition-all duration-300"
+                  >
+                    <Pencil className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(product.id)}
+                    className="p-2.5 rounded-xl bg-white/90 backdrop-blur-sm text-red-500 hover:bg-white shadow-[var(--shadow-sm)] transition-all duration-300"
+                  >
+                    <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-5">
+                <h3 className="font-display text-lg font-semibold text-[#2B2118] mb-1">{product.name}</h3>
+                <p className="font-body text-[13px] text-[#2B2118]/50 leading-relaxed line-clamp-2 mb-3">{product.desc}</p>
+                <p className="font-display italic text-lg text-[#B07D3F] font-semibold">{product.price}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDeleteConfirm(null)} className="fixed inset-0 bg-[#2E1822]/60 backdrop-blur-sm z-50" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-[1.5rem] border border-[#B07D3F]/15 shadow-[var(--shadow-lg)] p-8 z-50 text-center"
+            >
+              <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-red-50 border border-red-100 flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-400" strokeWidth={1.5} />
+              </div>
+              <h3 className="font-display text-xl font-semibold text-[#2B2118] mb-2">Delete Product?</h3>
+              <p className="font-body text-sm text-[#2B2118]/50 mb-7">This action cannot be undone.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 rounded-full border border-[#B07D3F]/20 font-accent text-[11px] tracking-[0.15em] uppercase text-[#2B2118]/60 hover:border-[#B07D3F]/40 transition-all duration-300">
+                  Cancel
+                </button>
+                <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-3 rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white font-accent text-[11px] tracking-[0.15em] uppercase shadow-[0_8px_20px_-6px_rgba(239,68,68,0.5)] hover:shadow-[0_12px_28px_-6px_rgba(239,68,68,0.55)] hover:-translate-y-0.5 transition-all duration-300">
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Create/Edit Modal */}
+      <AnimatePresence>
+        {modalOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setModalOpen(false)} className="fixed inset-0 bg-[#2E1822]/60 backdrop-blur-sm z-50" />
+            <motion.div
+              initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[90vh] bg-white rounded-[1.75rem] border border-[#B07D3F]/15 shadow-[var(--shadow-lg)] z-50 flex flex-col overflow-hidden"
+            >
+              {/* Modal header */}
+              <div className="flex items-center justify-between px-7 py-5 border-b border-[#B07D3F]/10 bg-gradient-to-b from-[#F3EADC]/40 to-transparent">
+                <h3 className="font-display text-xl font-semibold text-[#2B2118]">
+                  {editing ? 'Edit Product' : 'New Product'}
+                </h3>
+                <button onClick={() => setModalOpen(false)} className="p-2 rounded-full text-[#2B2118]/30 hover:text-[#7B2D43] hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal body */}
+              <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-7 py-6 space-y-5">
+                {/* Image upload */}
+                <div>
+                  <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Product Image</label>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="product-image"
+                    />
+                    <label
+                      htmlFor="product-image"
+                      className="flex items-center justify-center w-full h-36 rounded-[1.25rem] border-2 border-dashed border-[#B07D3F]/20 hover:border-[#7B2D43]/30 bg-[#F3EADC]/30 cursor-pointer transition-colors duration-300 overflow-hidden"
+                    >
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-center">
+                          <Upload className="w-6 h-6 text-[#B07D3F]/40 mx-auto mb-2" strokeWidth={1.5} />
+                          <p className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#2B2118]/35">
+                            Click to upload
+                          </p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+
+                {/* Name */}
+                <div>
+                  <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Product Name *</label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="e.g. Golden Arch Kit"
+                    className="lux-field !pl-5"
+                    required
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Description</label>
+                  <textarea
+                    value={form.desc}
+                    onChange={(e) => setForm({ ...form, desc: e.target.value })}
+                    placeholder="Brief description of the product..."
+                    className="lux-field"
+                    rows={3}
+                  />
+                </div>
+
+                {/* Price + Tag row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Price *</label>
+                    <input
+                      type="text"
+                      value={form.price}
+                      onChange={(e) => setForm({ ...form, price: e.target.value })}
+                      placeholder="₹2,499"
+                      className="lux-field !pl-5"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Tag (Optional)</label>
+                    <input
+                      type="text"
+                      value={form.tag}
+                      onChange={(e) => setForm({ ...form, tag: e.target.value })}
+                      placeholder="e.g. Bestseller"
+                      className="lux-field !pl-5"
+                    />
+                  </div>
+                </div>
+
+                {/* Category */}
+                {categories.length > 0 && (
+                  <div>
+                    <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Category</label>
+                    <select
+                      value={form.categoryId}
+                      onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                      className="lux-field"
+                    >
+                      <option value="">No category</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </form>
+
+              {/* Modal footer */}
+              <div className="px-7 py-5 border-t border-[#B07D3F]/10 bg-gradient-to-t from-[#F3EADC]/30 to-transparent flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="flex-1 py-3.5 rounded-full border border-[#B07D3F]/20 font-accent text-[11px] tracking-[0.15em] uppercase text-[#2B2118]/60 hover:border-[#B07D3F]/40 transition-all duration-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !form.name.trim() || !form.price.trim()}
+                  className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.15em] uppercase shadow-[0_8px_24px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_14px_36px_-8px_rgba(123,45,67,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-400 disabled:opacity-60 disabled:pointer-events-none"
+                >
+                  {saving ? (
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" strokeWidth={1.5} />
+                  )}
+                  {saving ? 'Saving...' : editing ? 'Update Product' : 'Create Product'}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
