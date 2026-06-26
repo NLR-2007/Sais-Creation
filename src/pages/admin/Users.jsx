@@ -4,7 +4,7 @@ import { db } from '../../config/firebase'
 import { collection, getDocs, updateDoc, doc, deleteDoc, orderBy, query } from 'firebase/firestore'
 import { useAuth } from '../../context/AuthContext'
 import {
-  Users as UsersIcon, Shield, ShieldOff, Trash2, Search,
+  Users as UsersIcon, Shield, ShieldOff, Trash2, Search, MessageCircle, Save,
 } from 'lucide-react'
 
 const fadeUp = {
@@ -68,6 +68,15 @@ export default function Users() {
       alert('Error deleting user: ' + err.message)
     }
     setDeleteConfirm(null)
+  }
+
+  const handleUpdateChatId = async (userId, chatId) => {
+    try {
+      await updateDoc(doc(db, 'users', userId), { telegramChatId: chatId })
+      await fetchUsers()
+    } catch (err) {
+      alert('Error updating Telegram Chat ID: ' + err.message)
+    }
   }
 
   const filtered = users.filter((u) =>
@@ -148,6 +157,7 @@ export default function Users() {
                     toggling={toggling === u.id}
                     onToggleRole={() => toggleRole(u.id, u.role)}
                     onDelete={() => setDeleteConfirm(u.id)}
+                    onUpdateChatId={handleUpdateChatId}
                   />
                 ))}
               </div>
@@ -169,6 +179,7 @@ export default function Users() {
                     toggling={toggling === u.id}
                     onToggleRole={() => toggleRole(u.id, u.role)}
                     onDelete={() => setDeleteConfirm(u.id)}
+                    onUpdateChatId={handleUpdateChatId}
                   />
                 ))}
               </div>
@@ -207,72 +218,121 @@ export default function Users() {
   )
 }
 
-function UserRow({ user, isSelf, toggling, onToggleRole, onDelete }) {
+function UserRow({ user, isSelf, toggling, onToggleRole, onDelete, onUpdateChatId }) {
   const isAdmin = user.role === 'admin'
   const createdDate = user.createdAt?.toDate ? user.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+  const [editingChatId, setEditingChatId] = useState(false)
+  const [chatIdValue, setChatIdValue] = useState(user.telegramChatId || '')
+  const [saving, setSaving] = useState(false)
+
+  const handleSaveChatId = async () => {
+    setSaving(true)
+    await onUpdateChatId(user.id, chatIdValue.trim())
+    setSaving(false)
+    setEditingChatId(false)
+  }
 
   return (
-    <div className="group flex items-center gap-4 p-4 md:p-5 bg-white rounded-[1.25rem] border border-[#B07D3F]/10 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:border-[#B07D3F]/20 transition-all duration-400">
-      {/* Avatar */}
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-display text-sm font-semibold ${
-        isAdmin
-          ? 'bg-gradient-to-br from-[#7B2D43] to-[#5C1F31] text-[#FBF7F0]'
-          : 'bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2] text-[#7B2D43] border border-[#B07D3F]/15'
-      }`}>
-        {user.name?.charAt(0)?.toUpperCase() || '?'}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-display text-base font-semibold text-[#2B2118] truncate">{user.name || 'Unnamed'}</span>
-          {isAdmin && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#7B2D43]/10 text-[#7B2D43] font-accent text-[9px] tracking-[0.15em] uppercase">
-              <Shield className="w-2.5 h-2.5" strokeWidth={1.5} />
-              Admin
-            </span>
-          )}
-          {isSelf && (
-            <span className="px-2 py-0.5 rounded-full bg-[#B07D3F]/10 text-[#B07D3F] font-accent text-[9px] tracking-[0.15em] uppercase">
-              You
-            </span>
-          )}
+    <div className="group bg-white rounded-[1.25rem] border border-[#B07D3F]/10 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:border-[#B07D3F]/20 transition-all duration-400">
+      <div className="flex items-center gap-4 p-4 md:p-5">
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-display text-sm font-semibold ${
+          isAdmin
+            ? 'bg-gradient-to-br from-[#7B2D43] to-[#5C1F31] text-[#FBF7F0]'
+            : 'bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2] text-[#7B2D43] border border-[#B07D3F]/15'
+        }`}>
+          {user.name?.charAt(0)?.toUpperCase() || '?'}
         </div>
-        <div className="flex items-center gap-3 mt-0.5">
-          {user.phone && <span className="font-accent font-light text-[11px] text-[#2B2118]/40">{user.phone}</span>}
-          {user.telegramUsername && <span className="font-accent font-light text-[11px] text-[#2B2118]/40">@{user.telegramUsername}</span>}
-          <span className="font-accent font-light text-[10px] text-[#2B2118]/25">{createdDate}</span>
-        </div>
-      </div>
 
-      {/* Actions */}
-      {!isSelf && (
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button
-            onClick={onToggleRole}
-            disabled={toggling}
-            title={isAdmin ? 'Remove admin' : 'Make admin'}
-            className={`p-2.5 rounded-xl border transition-all duration-300 ${
-              isAdmin
-                ? 'border-[#B07D3F]/20 text-[#B07D3F] hover:border-[#B07D3F]/40 hover:bg-[#B07D3F]/[0.05]'
-                : 'border-[#7B2D43]/20 text-[#7B2D43] hover:border-[#7B2D43]/40 hover:bg-[#7B2D43]/[0.05]'
-            }`}
-          >
-            {toggling ? (
-              <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin block" />
-            ) : isAdmin ? (
-              <ShieldOff className="w-4 h-4" strokeWidth={1.5} />
-            ) : (
-              <Shield className="w-4 h-4" strokeWidth={1.5} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-display text-base font-semibold text-[#2B2118] truncate">{user.name || 'Unnamed'}</span>
+            {isAdmin && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#7B2D43]/10 text-[#7B2D43] font-accent text-[9px] tracking-[0.15em] uppercase">
+                <Shield className="w-2.5 h-2.5" strokeWidth={1.5} />
+                Admin
+              </span>
             )}
-          </button>
-          <button
-            onClick={onDelete}
-            title="Delete user"
-            className="p-2.5 rounded-xl border border-red-200 text-red-400 hover:border-red-300 hover:bg-red-50 transition-all duration-300"
-          >
-            <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-          </button>
+            {isSelf && (
+              <span className="px-2 py-0.5 rounded-full bg-[#B07D3F]/10 text-[#B07D3F] font-accent text-[9px] tracking-[0.15em] uppercase">
+                You
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+            {user.email && <span className="font-accent font-light text-[11px] text-[#2B2118]/40">{user.email}</span>}
+            {user.phone && <span className="font-accent font-light text-[11px] text-[#2B2118]/40">{user.phone}</span>}
+            <span className="font-accent font-light text-[10px] text-[#2B2118]/25">{createdDate}</span>
+          </div>
+          {isAdmin && user.telegramChatId && !editingChatId && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <MessageCircle className="w-3 h-3 text-[#B07D3F]/50" strokeWidth={1.5} />
+              <span className="font-accent font-light text-[10px] text-[#B07D3F]/60">Telegram: {user.telegramChatId}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          {isAdmin && (
+            <button
+              onClick={() => setEditingChatId(!editingChatId)}
+              title="Set Telegram Chat ID"
+              className="p-2.5 rounded-xl border border-blue-200 text-blue-400 hover:border-blue-300 hover:bg-blue-50 transition-all duration-300"
+            >
+              <MessageCircle className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+          )}
+          {!isSelf && (
+            <>
+              <button
+                onClick={onToggleRole}
+                disabled={toggling}
+                title={isAdmin ? 'Remove admin' : 'Make admin'}
+                className={`p-2.5 rounded-xl border transition-all duration-300 ${
+                  isAdmin
+                    ? 'border-[#B07D3F]/20 text-[#B07D3F] hover:border-[#B07D3F]/40 hover:bg-[#B07D3F]/[0.05]'
+                    : 'border-[#7B2D43]/20 text-[#7B2D43] hover:border-[#7B2D43]/40 hover:bg-[#7B2D43]/[0.05]'
+                }`}
+              >
+                {toggling ? (
+                  <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin block" />
+                ) : isAdmin ? (
+                  <ShieldOff className="w-4 h-4" strokeWidth={1.5} />
+                ) : (
+                  <Shield className="w-4 h-4" strokeWidth={1.5} />
+                )}
+              </button>
+              <button
+                onClick={onDelete}
+                title="Delete user"
+                className="p-2.5 rounded-xl border border-red-200 text-red-400 hover:border-red-300 hover:bg-red-50 transition-all duration-300"
+              >
+                <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {editingChatId && (
+        <div className="px-5 pb-4 pt-0 border-t border-[#B07D3F]/8 mt-0">
+          <div className="flex items-center gap-3 pt-3">
+            <MessageCircle className="w-4 h-4 text-[#B07D3F] shrink-0" strokeWidth={1.5} />
+            <input
+              type="text"
+              value={chatIdValue}
+              onChange={(e) => setChatIdValue(e.target.value)}
+              placeholder="Telegram Chat ID (e.g. 8758051969)"
+              className="flex-1 bg-[#FBF7F0] border border-[#B07D3F]/15 rounded-full py-2.5 px-4 font-accent text-[12px] text-[#2B2118] placeholder:text-[#2B2118]/25 outline-none focus:border-[#7B2D43]/30 transition-all duration-300"
+            />
+            <button
+              onClick={handleSaveChatId}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent text-[10px] tracking-[0.15em] uppercase shadow-[0_6px_16px_-6px_rgba(123,45,67,0.5)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60"
+            >
+              {saving ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5" strokeWidth={1.5} />}
+              Save
+            </button>
+          </div>
         </div>
       )}
     </div>
