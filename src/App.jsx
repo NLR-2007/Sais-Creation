@@ -11,6 +11,7 @@ import ProductsPage from './pages/ProductsPage'
 import GalleryPage from './pages/GalleryPage'
 import CartPage from './pages/CartPage'
 import QuotePage from './pages/QuotePage'
+import ProductDetail from './pages/ProductDetail'
 import AdminLayout from './pages/admin/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
 import Categories from './pages/admin/Categories'
@@ -18,6 +19,7 @@ import Products from './pages/admin/Products'
 import Gallery from './pages/admin/Gallery'
 import Users from './pages/admin/Users'
 import Orders from './pages/admin/Orders'
+import SiteContent from './pages/admin/SiteContent'
 
 function App() {
   return (
@@ -32,6 +34,7 @@ function App() {
             <Route path="/gallery" element={<GalleryPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/quote" element={<QuotePage />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
             <Route
               path="/admin"
               element={
@@ -46,6 +49,7 @@ function App() {
               <Route path="gallery" element={<Gallery />} />
               <Route path="users" element={<Users />} />
               <Route path="orders" element={<Orders />} />
+              <Route path="content" element={<SiteContent />} />
             </Route>
           </Routes>
           <FloatingCart />

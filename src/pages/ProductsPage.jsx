@@ -8,7 +8,7 @@ import { useCart } from '../context/CartContext'
 import {
   Sparkles, Menu, X, Search, Tag, ShoppingCart, ArrowRight, ArrowLeft,
   Package, Heart, MessageCircle, Send, Filter, LogIn, LogOut, Shield, Gem,
-  ChevronDown, Check,
+  ChevronDown, Check, Eye,
 } from 'lucide-react'
 
 const WHATSAPP_NUMBER = '14083874854'
@@ -64,10 +64,19 @@ function Navbar({ user, isAdmin, onLogout }) {
             <Link to="/" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav">
               Home
             </Link>
+            <Link to="/gallery" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav">
+              Gallery
+            </Link>
             <span className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#7B2D43] px-4 py-2 rounded-full bg-[#7B2D43]/[0.06]">
               Products
               <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 w-1 h-1 rounded-full bg-[#7B2D43]" />
             </span>
+            <a href="/#about" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav">
+              About
+            </a>
+            <a href="/#contact" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav">
+              Contact
+            </a>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -107,6 +116,15 @@ function Navbar({ user, isAdmin, onLogout }) {
                 <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
                   Home <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
                 </Link>
+                <Link to="/gallery" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  Gallery <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
+                </Link>
+                <a href="/#about" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  About <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
+                </a>
+                <a href="/#contact" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  Contact <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
+                </a>
                 {user ? (
                   <>
                     {isAdmin && (
@@ -175,11 +193,18 @@ function ProductCard({ product, index, onAddToCart, inCart }) {
           </p>
         )}
 
-        <div className="flex items-center justify-end">
+        <div className="flex gap-2.5">
+          <Link
+            to={`/product/${product.id}`}
+            className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-full font-accent font-light text-[10px] tracking-[0.2em] uppercase border border-[#B07D3F]/25 text-[#7B2D43] bg-white hover:border-[#7B2D43]/40 hover:bg-[#7B2D43]/[0.04] transition-all duration-400"
+          >
+            <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
+            Know More
+          </Link>
           <button
             onClick={() => onAddToCart(product)}
             disabled={inCart}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-accent font-medium text-[10px] tracking-[0.2em] uppercase transition-all duration-400 ${
+            className={`flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-full font-accent font-medium text-[10px] tracking-[0.2em] uppercase transition-all duration-400 ${
               inCart
                 ? 'bg-green-50 text-green-700 border border-green-200 shadow-none cursor-default'
                 : 'bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] shadow-[0_8px_20px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_12px_28px_-8px_rgba(123,45,67,0.6)] hover:-translate-y-0.5 active:translate-y-0'

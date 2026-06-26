@@ -5,10 +5,12 @@ import {
   Menu, X, ShoppingCart, MessageCircle, Star, ChevronLeft, ChevronRight,
   PartyPopper, Sparkles, Flower2, Lamp, Phone,
   ArrowRight, Heart, Check, Send, Crown, Gem,
-  MapPin, Clock, CalendarDays, User, LogIn, LogOut, Shield
+  MapPin, Clock, CalendarDays, User, LogIn, LogOut, Shield, Eye
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
+import { db } from '../config/firebase'
+import { doc, getDoc, collection, getDocs, query, orderBy, where, limit } from 'firebase/firestore'
 
 /* ─────────────────────────────────────────────
    SAIS CREATION — Warm Luxury · Modern Atelier Edition
@@ -71,7 +73,7 @@ function SectionHeading({ eyebrow, title, titleItalic, subtitle, light = false }
     <motion.div
       variants={fadeUp} initial="hidden" whileInView="visible"
       viewport={{ once: true, margin: '-80px' }}
-      className="text-center mb-16 md:mb-24"
+      className="text-center mb-14 md:mb-18"
     >
       {eyebrow && (
         <span className={`inline-flex items-center gap-2.5 font-accent font-light text-[11px] tracking-[0.4em] uppercase mb-6 px-5 py-2 rounded-full border ${
@@ -413,7 +415,7 @@ function Navbar({ cartCount, user, isAdmin, onLogout }) {
 }
 
 /* ─── HERO ─── */
-function Hero() {
+function Hero({ content = {} }) {
   const particles = Array.from({ length: 14 }, (_, i) => ({
     left: `${(i * 53) % 100}%`,
     size: 3 + ((i * 7) % 5),
@@ -476,7 +478,7 @@ function Hero() {
         >
           <span className="inline-flex items-center gap-3 font-accent font-light text-[10px] md:text-[11px] tracking-[0.45em] uppercase text-[#7B2D43]/85 bg-white/55 backdrop-blur-sm border border-[#B07D3F]/25 rounded-full px-6 py-3 shadow-[0_8px_24px_-8px_rgba(59,31,43,0.15)]">
             <span className="relative block w-1.5 h-1.5 rounded-full bg-[#B07D3F] pulse-dot" />
-            Premium Decor &amp; Party Rentals
+            {content.badge || 'Premium Decor & Party Rentals'}
           </span>
         </motion.div>
 
@@ -486,14 +488,14 @@ function Hero() {
             transition={{ duration: 1, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-[-0.01em]"
           >
-            Where Celebrations
+            {content.title || 'Where Celebrations'}
           </motion.span>
           <motion.span
             initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="block text-6xl sm:text-7xl md:text-8xl lg:text-9xl italic font-medium bronze-shimmer py-2"
           >
-            Become Art
+            {content.titleItalic || 'Become Art'}
           </motion.span>
         </h1>
 
@@ -502,8 +504,7 @@ function Hero() {
           transition={{ duration: 0.9, delay: 0.7 }}
           className="font-body text-base md:text-lg lg:text-xl text-[#2B2118]/55 max-w-xl mx-auto mb-12 leading-relaxed italic"
         >
-          Bespoke decor, breathtaking installations &amp; curated rental
-          collections — crafted for moments you will never forget.
+          {content.subtitle || 'Bespoke decor, breathtaking installations & curated rental collections — crafted for moments you will never forget.'}
         </motion.p>
 
         <motion.div
@@ -632,9 +633,15 @@ function Services() {
   )
 }
 
+/* ─── PRODUCT DETAIL MODAL ─── */
 /* ─── PRODUCTS ─── */
-function Products() {
+function Products({ items = PRODUCTS }) {
   const { addToCart, isInCart } = useCart()
+  const GRADIENTS = [
+    'from-[#E2BF7E]/45 to-[#D9A5A0]/35', 'from-[#D9A5A0]/45 to-[#E2BF7E]/30', 'from-[#F3EADC] to-[#B07D3F]/30',
+    'from-[#D9A5A0]/40 to-[#7B2D43]/15', 'from-[#E2BF7E]/35 to-[#3B1F2B]/12', 'from-[#F3EADC] to-[#D9A5A0]/45',
+  ]
+
   return (
     <section id="products" className="py-24 md:py-36 bg-[#FBF7F0] relative overflow-hidden">
       <div className="absolute top-[10%] -left-28 w-[26rem] h-[26rem] rounded-full bg-[#F2D9D2]/35 blur-[120px]" />
@@ -649,26 +656,27 @@ function Products() {
 
         <motion.div
           variants={staggerContainer} initial="hidden" whileInView="visible"
-          viewport={{ once: true, margin: '-50px' }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+          viewport={{ once: true, amount: 0.05 }}
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 lg:grid-cols-3 gap-7"
         >
-          {PRODUCTS.map((product, i) => {
-            const pid = `home-${product.id}`
+          {items.map((product, i) => {
+            const pid = product.id || `home-${i}`
             const inCart = isInCart(pid)
+            const hasImage = !!product.imageUrl
             return (
               <motion.div
-                key={product.id} variants={fadeUp} custom={i}
+                key={pid} variants={fadeUp} custom={i}
                 className="group relative bg-white rounded-[1.75rem] overflow-hidden border border-[#B07D3F]/15 shadow-[0_4px_16px_rgba(59,31,43,0.05)] hover:border-[#7B2D43]/30 transition-all duration-700 hover:-translate-y-2.5 hover:shadow-[0_40px_90px_-28px_rgba(59,31,43,0.35)]"
               >
-                {/* Illustration area */}
-                <div className={`relative h-60 m-3 mb-0 rounded-[1.35rem] bg-gradient-to-br overflow-hidden ${
-                  ['from-[#E2BF7E]/45 to-[#D9A5A0]/35', 'from-[#D9A5A0]/45 to-[#E2BF7E]/30', 'from-[#F3EADC] to-[#B07D3F]/30',
-                   'from-[#D9A5A0]/40 to-[#7B2D43]/15', 'from-[#E2BF7E]/35 to-[#3B1F2B]/12', 'from-[#F3EADC] to-[#D9A5A0]/45'][i]
-                } flex items-center justify-center`}>
+                <div className={`relative h-60 m-3 mb-0 rounded-[1.35rem] bg-gradient-to-br overflow-hidden ${GRADIENTS[i % GRADIENTS.length]} flex items-center justify-center`}>
                   <span className="shine absolute top-0 bottom-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] z-10" />
-                  <div className="absolute inset-0 p-6 group-hover:scale-110 group-hover:-rotate-1 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]">
-                    <ProductArt id={product.id} />
-                  </div>
+                  {hasImage ? (
+                    <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+                  ) : (
+                    <div className="absolute inset-0 p-6 group-hover:scale-110 group-hover:-rotate-1 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]">
+                      <ProductArt id={typeof product.id === 'number' ? product.id : i + 1} />
+                    </div>
+                  )}
                   {product.tag && (
                     <span className="absolute top-4 left-4 z-20 font-accent font-medium text-[9px] tracking-[0.3em] uppercase bg-gradient-to-br from-[#8E3650] to-[#6A2438] text-[#FBF7F0] px-4 py-2 rounded-full shadow-[0_8px_20px_-6px_rgba(123,45,67,0.55)]">
                       {product.tag}
@@ -677,35 +685,63 @@ function Products() {
                 </div>
 
                 <div className="p-7">
-                  <h3 className="font-display text-[22px] font-semibold text-[#2B2118] leading-snug mb-2 group-hover:text-[#7B2D43] transition-colors duration-500">{product.name}</h3>
-                  <p className="font-body text-[14px] text-[#2B2118]/50 mb-6 leading-relaxed">{product.desc}</p>
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <h3 className="font-display text-[22px] font-semibold text-[#2B2118] leading-snug group-hover:text-[#7B2D43] transition-colors duration-500">{product.name}</h3>
+                    {product.price && (
+                      <span className="font-display italic text-lg text-[#B07D3F] font-semibold whitespace-nowrap mt-1">{product.price}</span>
+                    )}
+                  </div>
+                  <p className="font-body text-[14px] text-[#2B2118]/50 mb-6 leading-relaxed line-clamp-2">{product.desc}</p>
 
-                  <button
-                    onClick={() => addToCart({ id: pid, name: product.name, imageUrl: '' })}
-                    disabled={inCart}
-                    className={`w-full font-accent text-[11px] tracking-[0.28em] uppercase py-4 rounded-full transition-all duration-400 flex items-center justify-center gap-2.5 ${
-                      inCart
-                        ? 'bg-green-50 text-green-700 border border-green-200 font-light cursor-default'
-                        : 'bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-medium shadow-[0_10px_26px_-10px_rgba(123,45,67,0.55),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_16px_38px_-10px_rgba(123,45,67,0.6)] hover:-translate-y-0.5 active:translate-y-0'
-                    }`}
-                  >
-                    {inCart
-                      ? (<><Check className="w-4 h-4" /> Added to Cart</>)
-                      : (<><ShoppingCart className="w-4 h-4" strokeWidth={1.6} /> Add to Cart</>)}
-                  </button>
+                  <div className="flex flex-col gap-2.5">
+                    <Link
+                      to={`/product/${pid}`}
+                      className="w-full font-accent text-[10px] tracking-[0.2em] uppercase py-3.5 rounded-full transition-all duration-400 flex items-center justify-center gap-2 border border-[#B07D3F]/25 bg-white text-[#7B2D43] font-light hover:border-[#7B2D43]/50 hover:bg-[#7B2D43]/[0.04] hover:-translate-y-0.5 hover:shadow-[0_10px_26px_-10px_rgba(123,45,67,0.25)]"
+                    >
+                      <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      Know More
+                    </Link>
+                    <button
+                      onClick={() => addToCart({ id: pid, name: product.name, price: product.price || '', imageUrl: product.imageUrl || '' })}
+                      disabled={inCart}
+                      className={`w-full font-accent text-[10px] tracking-[0.25em] uppercase py-4 px-6 rounded-full transition-all duration-400 flex items-center justify-center gap-2.5 ${
+                        inCart
+                          ? 'bg-green-50 text-green-700 border border-green-200 font-light cursor-default'
+                          : 'bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-medium shadow-[0_10px_26px_-10px_rgba(123,45,67,0.55),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_16px_38px_-10px_rgba(123,45,67,0.6)] hover:-translate-y-0.5 active:translate-y-0'
+                      }`}
+                    >
+                      {inCart
+                        ? (<><Check className="w-4 h-4" /> Added</>)
+                        : (<><ShoppingCart className="w-4 h-4" strokeWidth={1.6} /> Add to Cart</>)}
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )
           })}
         </motion.div>
       </div>
+
     </section>
   )
 }
 
 /* ─── GALLERY ─── */
-function Gallery() {
+function Gallery({ images = GALLERY_IMAGES }) {
   const tileIcons = [Heart, PartyPopper, Crown, Flower2, Gem, Sparkles, Heart, Star, Lamp]
+  const HEIGHTS = [300, 380, 330, 350, 310, 400, 320, 360, 300]
+  const FALLBACK_GRADIENTS = [
+    'from-[#D9A5A0]/45 via-[#F3EADC] to-[#B07D3F]/25',
+    'from-[#B07D3F]/30 via-[#F3EADC] to-[#7B2D43]/20',
+    'from-[#7B2D43]/25 via-[#D9A5A0]/30 to-[#F3EADC]',
+    'from-[#E2BF7E]/40 via-[#F3EADC] to-[#D9A5A0]/35',
+    'from-[#D9A5A0]/35 via-[#F3EADC] to-[#3B1F2B]/15',
+    'from-[#F3EADC] via-[#D9A5A0]/30 to-[#B07D3F]/30',
+    'from-[#B07D3F]/25 via-[#E2BF7E]/30 to-[#F3EADC]',
+    'from-[#3B1F2B]/15 via-[#D9A5A0]/25 to-[#F3EADC]',
+    'from-[#D9A5A0]/40 via-[#F3EADC] to-[#7B2D43]/15',
+  ]
+
   return (
     <section id="gallery" className="py-24 md:py-36 bg-[#F3EADC] relative overflow-hidden">
       <div className="absolute -top-24 left-1/4 w-96 h-96 rounded-full bg-[#FBF7F0]/70 blur-[100px]" />
@@ -717,9 +753,12 @@ function Gallery() {
         />
 
         <div className="columns-2 md:columns-3 gap-5 space-y-5">
-          {GALLERY_IMAGES.map((img, i) => {
-            const TileIcon = tileIcons[i]
+          {images.map((img, i) => {
+            const TileIcon = tileIcons[i % tileIcons.length]
             const arch = i % 3 === 1
+            const hasImage = !!img.imageUrl
+            const height = img.height || HEIGHTS[i % HEIGHTS.length]
+            const gradient = img.gradient || FALLBACK_GRADIENTS[i % FALLBACK_GRADIENTS.length]
             return (
               <motion.div
                 key={img.id}
@@ -727,13 +766,17 @@ function Gallery() {
                 viewport={{ once: true, margin: '-30px' }} custom={i * 0.4}
                 className={`group relative overflow-hidden break-inside-avoid cursor-pointer ${arch ? 'rounded-t-[7rem] rounded-b-[1.5rem]' : 'rounded-[1.5rem]'} shadow-[0_6px_20px_-8px_rgba(59,31,43,0.18)] hover:shadow-[0_30px_70px_-22px_rgba(59,31,43,0.4)] transition-shadow duration-700`}
               >
-                <div className={`bg-gradient-to-br ${img.gradient} relative transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.07]`}
-                  style={{ height: img.height }}
+                <div className={`${hasImage ? 'bg-[#F3EADC]' : `bg-gradient-to-br ${gradient}`} relative transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.07]`}
+                  style={{ height }}
                 >
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                    <TileIcon className="w-7 h-7 text-[#7B2D43]/30 group-hover:scale-110 transition-transform duration-700" strokeWidth={1} />
-                    <span className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/35">{img.label}</span>
-                  </div>
+                  {hasImage ? (
+                    <img src={img.imageUrl} alt={img.label || ''} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                      <TileIcon className="w-7 h-7 text-[#7B2D43]/30 group-hover:scale-110 transition-transform duration-700" strokeWidth={1} />
+                      <span className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/35">{img.label}</span>
+                    </div>
+                  )}
                 </div>
 
                 <span className={`absolute inset-3 border border-white/0 group-hover:border-white/70 transition-all duration-500 pointer-events-none ${arch ? 'rounded-t-[6rem] rounded-b-[1.1rem]' : 'rounded-[1.1rem]'}`} />
@@ -763,7 +806,7 @@ function Gallery() {
 }
 
 /* ─── ABOUT ─── */
-function About() {
+function About({ content = {} }) {
   const values = [
     'Bespoke designs tailored to every story',
     'Premium materials & meticulous detailing',
@@ -824,22 +867,17 @@ function About() {
           >
             <motion.span variants={fadeUp} className="inline-flex items-center gap-2.5 font-accent font-light text-[11px] tracking-[0.4em] uppercase text-[#B07D3F] mb-6 px-5 py-2 rounded-full border border-[#B07D3F]/25 bg-white/50">
               <span className="block w-1 h-1 rounded-full bg-[#B07D3F]" />
-              Our Story
+              {content.eyebrow || 'Our Story'}
             </motion.span>
             <motion.h2 variants={fadeUp} className="font-display text-4xl md:text-5xl lg:text-[52px] font-semibold text-[#2B2118] leading-[1.08] tracking-[-0.01em] mb-7">
-              Crafting Joy,{' '}
-              <em className="bronze-shimmer font-medium italic">One Celebration at a Time</em>
+              {content.title || 'Crafting Joy,'}{' '}
+              <em className="bronze-shimmer font-medium italic">{content.titleItalic || 'One Celebration at a Time'}</em>
             </motion.h2>
             <motion.p variants={fadeUp} className="font-body text-base md:text-lg text-[#2B2118]/60 leading-relaxed mb-5">
-              Sais Creation began with a simple belief — every celebration deserves to feel
-              extraordinary. What started as a small passion for balloon art has blossomed
-              into a full-service decor atelier trusted by hundreds of families and brands
-              across the city.
+              {content.paragraph1 || 'Sais Creation began with a simple belief — every celebration deserves to feel extraordinary. What started as a small passion for balloon art has blossomed into a full-service decor atelier trusted by hundreds of families and brands across the city.'}
             </motion.p>
             <motion.p variants={fadeUp} className="font-body text-base md:text-lg text-[#2B2118]/60 leading-relaxed mb-10">
-              From a child's first birthday to grand wedding receptions, we pour the same
-              artistry, warmth, and obsessive attention to detail into every event. Your
-              vision becomes our canvas — and the smiles on your guests' faces, our reward.
+              {content.paragraph2 || 'From a child\'s first birthday to grand wedding receptions, we pour the same artistry, warmth, and obsessive attention to detail into every event. Your vision becomes our canvas — and the smiles on your guests\' faces, our reward.'}
             </motion.p>
 
             <motion.ul variants={fadeUp} className="space-y-4 mb-11">
@@ -861,7 +899,7 @@ function About() {
               </a>
               <div className="flex items-center gap-3">
                 <span className="block h-px w-8 bg-[#B07D3F]/50" />
-                <span className="font-display italic text-lg text-[#7B2D43]">— The Sais Creation Family</span>
+                <span className="font-display italic text-lg text-[#7B2D43]">— {content.founderName || 'The Sais Creation Family'}</span>
               </div>
             </motion.div>
           </motion.div>
@@ -934,19 +972,19 @@ function WhyChooseUs() {
 }
 
 /* ─── TESTIMONIALS ─── */
-function Testimonials() {
+function Testimonials({ items = TESTIMONIALS }) {
   const [current, setCurrent] = useState(0)
   const timerRef = useRef(null)
 
   const resetTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current)
-    timerRef.current = setInterval(() => setCurrent((p) => (p + 1) % TESTIMONIALS.length), 5500)
+    timerRef.current = setInterval(() => setCurrent((p) => (p + 1) % items.length), 5500)
   }
 
   useEffect(() => { resetTimer(); return () => clearInterval(timerRef.current) }, [])
 
   const navigate = (dir) => {
-    setCurrent((p) => (p + dir + TESTIMONIALS.length) % TESTIMONIALS.length)
+    setCurrent((p) => (p + dir + items.length) % items.length)
     resetTimer()
   }
 
@@ -972,7 +1010,7 @@ function Testimonials() {
               <span className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-[3px] rounded-b-full bg-gradient-to-r from-transparent via-[#D9A5A0]/70 to-transparent" />
 
               <div className="flex items-center justify-center gap-1.5 mb-8">
-                {Array.from({ length: TESTIMONIALS[current].rating }).map((_, s) => (
+                {Array.from({ length: items[current].rating }).map((_, s) => (
                   <motion.span key={s}
                     initial={{ opacity: 0, scale: 0, rotate: -90 }} animate={{ opacity: 1, scale: 1, rotate: 0 }}
                     transition={{ delay: 0.15 + s * 0.07, type: 'spring', stiffness: 300, damping: 18 }}
@@ -983,18 +1021,18 @@ function Testimonials() {
               </div>
 
               <blockquote className="font-display italic text-2xl md:text-[28px] text-[#2B2118]/80 leading-relaxed mb-10">
-                {TESTIMONIALS[current].text}
+                {items[current].text}
               </blockquote>
 
               <div className="flex items-center justify-center gap-5">
                 <span className="block h-px w-10 bg-gradient-to-r from-transparent to-[#B07D3F]/50" />
                 <div className="flex items-center gap-4">
                   <span className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D9A5A0]/50 to-[#B07D3F]/30 border border-[#B07D3F]/30 flex items-center justify-center font-display text-lg font-semibold text-[#7B2D43] shadow-[0_6px_16px_-6px_rgba(176,125,63,0.5)]">
-                    {TESTIMONIALS[current].name.charAt(0)}
+                    {items[current].name.charAt(0)}
                   </span>
                   <div className="text-left">
-                    <p className="font-accent font-medium text-[13px] tracking-[0.25em] uppercase text-[#2B2118]">{TESTIMONIALS[current].name}</p>
-                    <p className="font-accent font-light text-[10px] tracking-[0.3em] text-[#7B2D43] uppercase mt-1">{TESTIMONIALS[current].event}</p>
+                    <p className="font-accent font-medium text-[13px] tracking-[0.25em] uppercase text-[#2B2118]">{items[current].name}</p>
+                    <p className="font-accent font-light text-[10px] tracking-[0.3em] text-[#7B2D43] uppercase mt-1">{items[current].event}</p>
                   </div>
                 </div>
                 <span className="block h-px w-10 bg-gradient-to-l from-transparent to-[#B07D3F]/50" />
@@ -1009,7 +1047,7 @@ function Testimonials() {
               <ChevronLeft className="w-4 h-4" />
             </button>
             <div className="flex gap-2.5">
-              {TESTIMONIALS.map((_, i) => (
+              {items.map((_, i) => (
                 <button key={i} onClick={() => { setCurrent(i); resetTimer() }} aria-label={`Testimonial ${i + 1}`}
                   className={`h-2 rounded-full transition-all duration-500 ${i === current ? 'w-10 bg-gradient-to-r from-[#8E3650] to-[#6A2438] shadow-[0_2px_8px_rgba(123,45,67,0.4)]' : 'w-2 bg-[#2B2118]/15 hover:bg-[#D9A5A0]'}`}
                 />
@@ -1028,12 +1066,14 @@ function Testimonials() {
 }
 
 /* ─── CONTACT ─── */
-function Contact() {
+function Contact({ content = {} }) {
   const [name, setName] = useState('')
   const [eventType, setEventType] = useState('')
   const [eventDate, setEventDate] = useState('')
   const [details, setDetails] = useState('')
   const [error, setError] = useState('')
+
+  const whatsapp = content.whatsappNumber || WHATSAPP_NUMBER
 
   const handleSend = () => {
     if (!name.trim()) { setError('Please tell us your name so we can greet you properly.'); return }
@@ -1048,16 +1088,15 @@ function Contact() {
     ].filter(Boolean)
 
     window.open(
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`,
+      `https://wa.me/${whatsapp}?text=${encodeURIComponent(lines.join('\n'))}`,
       '_blank', 'noopener,noreferrer'
     )
   }
-
   const infoCards = [
-    { icon: MessageCircle, label: 'WhatsApp Us', value: 'Fastest replies — usually within minutes', href: `https://wa.me/${WHATSAPP_NUMBER}` },
-    { icon: Phone, label: 'Call Us', value: '+91 XXXXX XXXXX', href: `tel:+${WHATSAPP_NUMBER}` },
-    { icon: Clock, label: 'Working Hours', value: 'Mon–Sun · 9 AM – 9 PM IST', href: null },
-    { icon: MapPin, label: 'Service Area', value: 'Hyderabad & surrounding areas', href: null },
+    { icon: MessageCircle, label: 'WhatsApp Us', value: 'Fastest replies — usually within minutes', href: `https://wa.me/${whatsapp}` },
+    { icon: Phone, label: 'Call Us', value: content.phone || '+1 (408) 387-4854', href: `tel:+${whatsapp}` },
+    { icon: Clock, label: 'Working Hours', value: content.hours || 'Mon–Sun · 9 AM – 9 PM', href: null },
+    { icon: MapPin, label: 'Service Area', value: content.address || 'San Jose, CA & surrounding areas', href: null },
   ]
 
   return (
@@ -1067,8 +1106,8 @@ function Contact() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <SectionHeading
           eyebrow="Let's Talk"
-          title="Begin Your" titleItalic="Celebration"
-          subtitle="Share a few details and we'll craft a personalised quote — delivered straight to your WhatsApp"
+          title={content.title || "Begin Your"} titleItalic={content.titleItalic || "Celebration"}
+          subtitle={content.subtitle || "Share a few details and we'll craft a personalised quote — delivered straight to your WhatsApp"}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-14">
@@ -1179,7 +1218,7 @@ function Contact() {
 }
 
 /* ─── CTA BANNER — inset deep wine card ─── */
-function CTABanner() {
+function CTABanner({ content = {} }) {
   return (
     <section className="relative py-20 md:py-24 bg-[#FBF7F0] overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1198,11 +1237,11 @@ function CTABanner() {
               <Crown className="w-7 h-7 text-[#D9A5A0]" strokeWidth={1.2} />
             </div>
             <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-semibold text-[#FBF7F0] leading-[1.08] mb-5">
-              Your Dream Event,{' '}
-              <em className="blush-shimmer font-medium italic">One Message Away</em>
+              {content.title || 'Your Dream Event,'}{' '}
+              <em className="blush-shimmer font-medium italic">{content.titleItalic || 'One Message Away'}</em>
             </h2>
             <p className="font-body italic text-base md:text-lg text-[#FBF7F0]/55 mb-11 max-w-xl mx-auto">
-              Tell us your vision — we'll handle the magic. Quick quotes, friendly conversation, no obligations.
+              {content.subtitle || 'Tell us your vision — we\'ll handle the magic. Quick quotes, friendly conversation, no obligations.'}
             </p>
             <a
               href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi Sais Creation! I want to plan my dream event. Can we talk?')}`}
@@ -1211,7 +1250,7 @@ function CTABanner() {
             >
               <span className="shine absolute top-0 bottom-0 w-1/3 bg-white/40 -translate-x-[150%]" />
               <MessageCircle className="w-4 h-4 relative z-10 group-hover:rotate-12 transition-transform duration-300" strokeWidth={1.8} />
-              <span className="relative z-10">Start Planning on WhatsApp</span>
+              <span className="relative z-10">{content.buttonText || 'Start Planning on WhatsApp'}</span>
             </a>
           </div>
         </motion.div>
@@ -1221,7 +1260,7 @@ function CTABanner() {
 }
 
 /* ─── FOOTER — deep wine ─── */
-function Footer() {
+function Footer({ content = {} }) {
   return (
     <footer className="bg-[#2E1822] relative overflow-hidden rounded-t-[2.5rem] md:rounded-t-[3rem]">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#D9A5A0]/30 to-transparent" />
@@ -1238,16 +1277,16 @@ function Footer() {
               <span className="font-display text-2xl font-semibold text-[#FBF7F0]">Sais Creation</span>
             </div>
             <p className="font-body italic text-[15px] text-[#FBF7F0]/45 leading-relaxed mb-7">
-              Crafting unforgettable celebrations with premium decor, bespoke designs &amp; flawless execution.
+              {content.description || 'Crafting unforgettable celebrations with premium decor, bespoke designs & flawless execution.'}
             </p>
             <div className="flex gap-3">
               {[
-                { href: 'https://instagram.com/saiscreation', label: 'Instagram', icon: (
+                { href: content.instagramUrl || 'https://instagram.com/saiscreation', label: 'Instagram', icon: (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.51"/>
                   </svg>
                 )},
-                { href: 'https://facebook.com/saiscreation', label: 'Facebook', icon: (
+                { href: content.facebookUrl || 'https://facebook.com/saiscreation', label: 'Facebook', icon: (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
                   </svg>
@@ -1335,6 +1374,51 @@ export default function Home() {
   const { cartCount } = useCart()
   const { user, isAdmin, logout } = useAuth()
   const navigate = useNavigate()
+  const [siteContent, setSiteContent] = useState({})
+  const [dynamicTestimonials, setDynamicTestimonials] = useState(null)
+  const [featuredProducts, setFeaturedProducts] = useState(null)
+  const [galleryImages, setGalleryImages] = useState(null)
+
+  useEffect(() => {
+    async function fetchContent() {
+      try {
+        const sections = ['hero', 'about', 'contact', 'cta', 'footer']
+        const data = {}
+        await Promise.all(
+          sections.map(async (sec) => {
+            const snap = await getDoc(doc(db, 'siteContent', sec))
+            if (snap.exists()) data[sec] = snap.data()
+          })
+        )
+        setSiteContent(data)
+      } catch { /* siteContent not available yet */ }
+
+      try {
+        const tq = query(collection(db, 'testimonials'), orderBy('createdAt', 'desc'))
+        const tSnap = await getDocs(tq)
+        if (tSnap.size > 0) {
+          setDynamicTestimonials(tSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        }
+      } catch { /* testimonials not available yet */ }
+
+      try {
+        const pq = query(collection(db, 'products'), where('featured', '==', true), limit(6))
+        const pSnap = await getDocs(pq)
+        if (pSnap.size > 0) {
+          setFeaturedProducts(pSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        }
+      } catch { /* featured products not available yet */ }
+
+      try {
+        const gq = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'), limit(9))
+        const gSnap = await getDocs(gq)
+        if (gSnap.size > 0) {
+          setGalleryImages(gSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        }
+      } catch { /* gallery not available yet */ }
+    }
+    fetchContent()
+  }, [])
 
   const handleLogout = async () => {
     await logout()
@@ -1344,17 +1428,17 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#FBF7F0]">
       <Navbar cartCount={cartCount} user={user} isAdmin={isAdmin} onLogout={handleLogout} />
-      <Hero />
+      <Hero content={siteContent.hero} />
       <MarqueeStrip />
       <Services />
-      <Products />
-      <Gallery />
-      <About />
+      <Products items={featuredProducts || PRODUCTS} />
+      <Gallery images={galleryImages || GALLERY_IMAGES} />
+      <About content={siteContent.about} />
       <WhyChooseUs />
-      <Testimonials />
-      <Contact />
-      <CTABanner />
-      <Footer />
+      <Testimonials items={dynamicTestimonials || TESTIMONIALS} />
+      <Contact content={siteContent.contact} />
+      <CTABanner content={siteContent.cta} />
+      <Footer content={siteContent.footer} />
     </div>
   )
 }

@@ -54,6 +54,17 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    // Reviews collection
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow delete: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
     // Admin OTP verifications (Cloud Functions only)
     match /adminOtpVerifications/{docId} {
       allow read, write: if false;

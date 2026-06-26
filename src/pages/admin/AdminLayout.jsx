@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import {
   LayoutDashboard, Package, Image, Users, LogOut,
-  Menu, X, Sparkles, ChevronLeft, LayoutList, ClipboardList,
+  Menu, X, Sparkles, ChevronLeft, LayoutList, ClipboardList, FileText,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/admin/products', icon: Package, label: 'Products' },
   { to: '/admin/gallery', icon: Image, label: 'Gallery' },
   { to: '/admin/orders', icon: ClipboardList, label: 'Orders' },
+  { to: '/admin/content', icon: FileText, label: 'Home Content' },
   { to: '/admin/users', icon: Users, label: 'Users' },
 ]
 

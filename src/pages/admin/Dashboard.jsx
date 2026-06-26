@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { db } from '../../config/firebase'
 import { collection, getDocs } from 'firebase/firestore'
 import {
-  Package, Image, Users, FileText, TrendingUp, ArrowRight, Sparkles,
+  Package, Image, Users, FileText, TrendingUp, ArrowRight, Sparkles, ClipboardList,
 } from 'lucide-react'
 
 const fadeUp = {
@@ -51,14 +51,14 @@ export default function Dashboard() {
     { label: 'Products', count: stats.products, icon: Package, color: 'from-[#7B2D43] to-[#5C1F31]', link: '/admin/products' },
     { label: 'Gallery Photos', count: stats.gallery, icon: Image, color: 'from-[#B07D3F] to-[#8C5A2B]', link: '/admin/gallery' },
     { label: 'Users', count: stats.users, icon: Users, color: 'from-[#D9A5A0] to-[#C28D87]', link: '/admin/users' },
-    { label: 'Testimonials', count: stats.testimonials, icon: FileText, color: 'from-[#3B1F2B] to-[#2E1822]', link: '/admin/content' },
+    { label: 'Testimonials', count: stats.testimonials, icon: FileText, color: 'from-[#3B1F2B] to-[#2E1822]', link: '/admin/content?section=testimonials' },
   ]
 
   const quickActions = [
     { label: 'Add New Product', to: '/admin/products', icon: Package },
     { label: 'Upload Gallery Photo', to: '/admin/gallery', icon: Image },
-    { label: 'Edit Site Content', to: '/admin/content', icon: FileText },
-    { label: 'Manage Users', to: '/admin/users', icon: Users },
+    { label: 'Edit Home Content', to: '/admin/content', icon: FileText },
+    { label: 'Manage Orders', to: '/admin/orders', icon: ClipboardList },
   ]
 
   return (

@@ -60,13 +60,19 @@ function Navbar({ user, isAdmin, onLogout }) {
             <Link to="/" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
               Home
             </Link>
-            <Link to="/products" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
-              Products
-            </Link>
             <span className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#7B2D43] px-4 py-2 rounded-full bg-[#7B2D43]/[0.06]">
               Gallery
               <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 w-1 h-1 rounded-full bg-[#7B2D43]" />
             </span>
+            <Link to="/products" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
+              Products
+            </Link>
+            <a href="/#about" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
+              About
+            </a>
+            <a href="/#contact" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
+              Contact
+            </a>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -106,6 +112,12 @@ function Navbar({ user, isAdmin, onLogout }) {
                 <Link to="/products" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
                   Products <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
                 </Link>
+                <a href="/#about" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  About <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
+                </a>
+                <a href="/#contact" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  Contact <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
+                </a>
                 {user ? (
                   <>
                     {isAdmin && (

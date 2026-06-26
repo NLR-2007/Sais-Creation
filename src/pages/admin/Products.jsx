@@ -6,7 +6,7 @@ import {
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import {
-  Package, Plus, Pencil, Trash2, X, Save, Upload, Search, Tag,
+  Package, Plus, Pencil, Trash2, X, Save, Upload, Search, Tag, Sparkles, ImagePlus,
 } from 'lucide-react'
 
 const fadeUp = {
@@ -14,7 +14,7 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 }
 
-const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '' }
+const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '', featured: false, photos: [] }
 
 export default function Products() {
   const [products, setProducts] = useState([])
@@ -70,7 +70,7 @@ export default function Products() {
 
   const openEdit = (product) => {
     setEditing(product)
-    setForm({ name: product.name, desc: product.desc, price: product.price, tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '' })
+    setForm({ name: product.name, desc: product.desc, price: product.price, tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '', featured: product.featured || false, photos: product.photos || [] })
     setImageFile(null)
     setImagePreview(product.imageUrl || '')
     setModalOpen(true)
@@ -83,9 +83,32 @@ export default function Products() {
     setImagePreview(URL.createObjectURL(file))
   }
 
+  const handleGalleryUpload = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+    setSaving(true)
+    try {
+      const urls = await Promise.all(
+        files.map(async (file) => {
+          const storageRef = ref(storage, `products/gallery/${Date.now()}_${file.name}`)
+          await uploadBytes(storageRef, file)
+          return getDownloadURL(storageRef)
+        })
+      )
+      setForm((prev) => ({ ...prev, photos: [...prev.photos, ...urls] }))
+    } catch (err) {
+      alert('Error uploading photos: ' + err.message)
+    }
+    setSaving(false)
+  }
+
+  const removeGalleryPhoto = (index) => {
+    setForm((prev) => ({ ...prev, photos: prev.photos.filter((_, i) => i !== index) }))
+  }
+
   const handleSave = async (e) => {
     e.preventDefault()
-    if (!form.name.trim() || !form.price.trim()) return
+    if (!form.name.trim()) return
     setSaving(true)
 
     try {
@@ -104,6 +127,8 @@ export default function Products() {
         tag: form.tag.trim(),
         imageUrl,
         categoryId: form.categoryId || '',
+        featured: form.featured || false,
+        photos: form.photos || [],
       }
 
       if (editing) {
@@ -225,6 +250,12 @@ export default function Products() {
                     {product.tag}
                   </span>
                 )}
+                {product.featured && (
+                  <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#B07D3F] text-[#FBF7F0] font-accent font-light text-[9px] tracking-[0.2em] uppercase shadow-[0_4px_12px_-4px_rgba(176,125,63,0.5)]">
+                    <Sparkles className="w-2.5 h-2.5" strokeWidth={1.5} />
+                    Featured
+                  </span>
+                )}
                 {/* Actions overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#2E1822]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400 flex items-end justify-end p-3 gap-2">
                   <button
@@ -245,7 +276,7 @@ export default function Products() {
               <div className="p-5">
                 <h3 className="font-display text-lg font-semibold text-[#2B2118] mb-1">{product.name}</h3>
                 <p className="font-body text-[13px] text-[#2B2118]/50 leading-relaxed line-clamp-2 mb-3">{product.desc}</p>
-                <p className="font-display italic text-lg text-[#B07D3F] font-semibold">{product.price}</p>
+                {product.price && <p className="font-display italic text-lg text-[#B07D3F] font-semibold">{product.price}</p>}
               </div>
             </motion.div>
           ))}
@@ -358,14 +389,13 @@ export default function Products() {
                 {/* Price + Tag row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Price *</label>
+                    <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Price (Optional)</label>
                     <input
                       type="text"
                       value={form.price}
                       onChange={(e) => setForm({ ...form, price: e.target.value })}
                       placeholder="₹2,499"
                       className="lux-field !pl-5"
-                      required
                     />
                   </div>
                   <div>
@@ -396,6 +426,64 @@ export default function Products() {
                     </select>
                   </div>
                 )}
+
+                <div>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={form.featured}
+                        onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-6 rounded-full bg-[#F3EADC] border border-[#B07D3F]/20 peer-checked:bg-[#7B2D43] transition-colors duration-300" />
+                      <div className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm peer-checked:translate-x-4 transition-transform duration-300" />
+                    </div>
+                    <span className="font-accent font-light text-[11px] tracking-[0.2em] uppercase text-[#2B2118]/60 group-hover:text-[#7B2D43] transition-colors duration-300">
+                      Featured on Home Page
+                    </span>
+                  </label>
+                </div>
+
+                {/* Gallery Photos */}
+                <div>
+                  <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">
+                    Gallery Photos <span className="normal-case tracking-normal text-[#2B2118]/35">(shown in "Know More")</span>
+                  </label>
+                  {form.photos.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mb-3">
+                      {form.photos.map((url, idx) => (
+                        <div key={idx} className="relative group/photo rounded-xl overflow-hidden aspect-square">
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryPhoto(idx)}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500/90 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity duration-200"
+                          >
+                            <X className="w-3 h-3" strokeWidth={2.5} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleGalleryUpload}
+                    className="hidden"
+                    id="gallery-photos"
+                  />
+                  <label
+                    htmlFor="gallery-photos"
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-[#B07D3F]/20 hover:border-[#7B2D43]/30 bg-[#F3EADC]/20 cursor-pointer transition-colors duration-300"
+                  >
+                    <ImagePlus className="w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />
+                    <span className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#2B2118]/40">
+                      Add Gallery Photos
+                    </span>
+                  </label>
+                </div>
               </form>
 
               {/* Modal footer */}
@@ -409,7 +497,7 @@ export default function Products() {
                 </button>
                 <button
                   onClick={handleSave}
-                  disabled={saving || !form.name.trim() || !form.price.trim()}
+                  disabled={saving || !form.name.trim()}
                   className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.15em] uppercase shadow-[0_8px_24px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_14px_36px_-8px_rgba(123,45,67,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-400 disabled:opacity-60 disabled:pointer-events-none"
                 >
                   {saving ? (
