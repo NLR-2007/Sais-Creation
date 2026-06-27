@@ -420,9 +420,16 @@ export default function Products() {
                       className="lux-field"
                     >
                       <option value="">No category</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
+                      <optgroup label="Decors">
+                        {categories.filter((c) => (c.type || 'decors') === 'decors').map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Rentals">
+                        {categories.filter((c) => c.type === 'rentals').map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </optgroup>
                     </select>
                   </div>
                 )}

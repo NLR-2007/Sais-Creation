@@ -14,7 +14,7 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 }
 
-const EMPTY = { name: '', imageUrl: '' }
+const EMPTY = { name: '', imageUrl: '', type: 'decors' }
 
 export default function Categories() {
   const [categories, setCategories] = useState([])
@@ -63,7 +63,7 @@ export default function Categories() {
 
   const openEdit = (cat) => {
     setEditing(cat)
-    setForm({ name: cat.name, imageUrl: cat.imageUrl || '' })
+    setForm({ name: cat.name, imageUrl: cat.imageUrl || '', type: cat.type || 'decors' })
     setImageFile(null)
     setImagePreview(cat.imageUrl || '')
     setModalOpen(true)
@@ -93,6 +93,7 @@ export default function Categories() {
       const data = {
         name: form.name.trim(),
         imageUrl,
+        type: form.type || 'decors',
       }
 
       if (editing) {
@@ -230,7 +231,12 @@ export default function Categories() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-display text-lg font-semibold text-[#2B2118] truncate">{cat.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-lg font-semibold text-[#2B2118] truncate">{cat.name}</h3>
+                    <span className={`shrink-0 px-2.5 py-0.5 rounded-full font-accent text-[9px] tracking-[0.2em] uppercase ${cat.type === 'rentals' ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                      {cat.type === 'rentals' ? 'Rentals' : 'Decors'}
+                    </span>
+                  </div>
                   <p className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#B07D3F]">
                     Position {index + 1}
                   </p>
@@ -333,6 +339,26 @@ export default function Categories() {
                     className="lux-field !pl-5"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Category Type *</label>
+                  <div className="flex gap-3">
+                    {['decors', 'rentals'].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setForm({ ...form, type: t })}
+                        className={`flex-1 py-3 rounded-full font-accent text-[11px] tracking-[0.2em] uppercase border transition-all duration-300 ${
+                          form.type === t
+                            ? 'bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] border-[#7B2D43] shadow-[0_6px_18px_-6px_rgba(123,45,67,0.45)]'
+                            : 'bg-white text-[#2B2118]/55 border-[#B07D3F]/20 hover:border-[#7B2D43]/30 hover:text-[#7B2D43]'
+                        }`}
+                      >
+                        {t === 'decors' ? 'Decors' : 'Rentals'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </form>
 

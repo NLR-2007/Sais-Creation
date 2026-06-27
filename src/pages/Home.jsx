@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
+import SEO from '../components/SEO'
 import {
   Menu, X, ShoppingCart, MessageCircle, Star, ChevronLeft, ChevronRight,
   PartyPopper, Sparkles, Flower2, Lamp, Phone,
@@ -26,7 +27,7 @@ import { doc, getDoc, collection, getDocs, query, orderBy, where, limit } from '
 ───────────────────────────────────────────── */
 
 const WHATSAPP_NUMBER = '14083874854'
-const NAV_LINKS = ['Home', 'Gallery', 'Products', 'About', 'Contact']
+const NAV_LINKS = ['Home', 'Gallery', 'Rentals', 'Decors', 'About', 'Contact']
 
 /* ── Shared button recipes ── */
 const BTN_PRIMARY =
@@ -259,24 +260,26 @@ function Navbar({ cartCount, user, isAdmin, onLogout }) {
           : 'max-w-7xl px-4 sm:px-6 lg:px-8 border border-transparent'
       }`}>
         <div className="flex items-center justify-between py-3 md:py-3.5">
-          <a href="#home" className="flex items-center gap-3 group">
-            <div className="relative w-11 h-11 flex items-center justify-center">
+          <div className="flex items-center gap-3 group">
+            <a href="#home" className="relative w-11 h-11 flex items-center justify-center">
               <span className="absolute inset-0 rotate-45 rounded-[10px] border border-[#B07D3F]/60 bg-gradient-to-br from-[#F3EADC]/80 to-transparent group-hover:rotate-[135deg] group-hover:border-[#7B2D43]/50 transition-all duration-700 shadow-[0_4px_14px_-4px_rgba(176,125,63,0.4)]" />
               <Sparkles className="w-[18px] h-[18px] text-[#7B2D43]" strokeWidth={1.5} />
-            </div>
+            </a>
             <div className="leading-none">
-              <span className="font-display text-2xl md:text-[26px] font-semibold text-[#2B2118] tracking-wide block group-hover:text-[#7B2D43] transition-colors duration-300">
+              <a href="#home" className="font-display text-2xl md:text-[26px] font-semibold text-[#2B2118] tracking-wide block group-hover:text-[#7B2D43] transition-colors duration-300">
                 Sais Creation
-              </span>
+              </a>
               <span className="font-accent font-light text-[8.5px] tracking-[0.5em] uppercase text-[#B07D3F]">
-                Decor &nbsp;·&nbsp; Rentals
+                <Link to="/rentals" className="hover:text-[#7B2D43] transition-colors duration-300">Rentals</Link>
+                {' · '}
+                <Link to="/decors" className="hover:text-[#7B2D43] transition-colors duration-300">Decor</Link>
               </span>
             </div>
-          </a>
+          </div>
 
           <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map((link) => {
-              const isPage = link === 'Products' || link === 'Gallery'
+              const isPage = link === 'Decors' || link === 'Rentals' || link === 'Gallery'
               return isPage ? (
                 <Link key={link} to={`/${link.toLowerCase()}`}
                   className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav"
@@ -353,7 +356,7 @@ function Navbar({ cartCount, user, isAdmin, onLogout }) {
             >
               <div className="px-3 py-4 space-y-1">
                 {NAV_LINKS.map((link, i) => {
-                  const isPage = link === 'Products' || link === 'Gallery'
+                  const isPage = link === 'Decors' || link === 'Rentals' || link === 'Gallery'
                   return isPage ? (
                     <motion.div key={link} initial={{ x: -24, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: i * 0.07 }}>
                       <Link to={`/${link.toLowerCase()}`} onClick={() => setMobileOpen(false)}
@@ -478,7 +481,7 @@ function Hero({ content = {} }) {
         >
           <span className="inline-flex items-center gap-3 font-accent font-light text-[10px] md:text-[11px] tracking-[0.45em] uppercase text-[#7B2D43]/85 bg-white/55 backdrop-blur-sm border border-[#B07D3F]/25 rounded-full px-6 py-3 shadow-[0_8px_24px_-8px_rgba(59,31,43,0.15)]">
             <span className="relative block w-1.5 h-1.5 rounded-full bg-[#B07D3F] pulse-dot" />
-            {content.badge || 'Premium Decor & Party Rentals'}
+            {content.badge || 'Elegant Traditional Décor, Premium Rental Collections'}
           </span>
         </motion.div>
 
@@ -504,7 +507,7 @@ function Hero({ content = {} }) {
           transition={{ duration: 0.9, delay: 0.7 }}
           className="font-body text-base md:text-lg lg:text-xl text-[#2B2118]/55 max-w-xl mx-auto mb-12 leading-relaxed italic"
         >
-          {content.subtitle || 'Bespoke decor, breathtaking installations & curated rental collections — crafted for moments you will never forget.'}
+          {content.subtitle || 'Custom event décor and high-quality rental props for weddings, birthdays, baby showers, festivals & more — crafted for moments you will never forget.'}
         </motion.p>
 
         <motion.div
@@ -512,7 +515,7 @@ function Hero({ content = {} }) {
           transition={{ duration: 0.9, delay: 0.9 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-5"
         >
-          <Link to="/products" className={BTN_PRIMARY}>
+          <Link to="/decors" className={BTN_PRIMARY}>
             <span className="shine absolute top-0 bottom-0 w-1/3 bg-white/25 -translate-x-[150%]" />
             <span className="relative z-10">Explore Collection</span>
             <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1.5 transition-transform duration-300" />
@@ -874,10 +877,10 @@ function About({ content = {} }) {
               <em className="bronze-shimmer font-medium italic">{content.titleItalic || 'One Celebration at a Time'}</em>
             </motion.h2>
             <motion.p variants={fadeUp} className="font-body text-base md:text-lg text-[#2B2118]/60 leading-relaxed mb-5">
-              {content.paragraph1 || 'Sais Creation began with a simple belief — every celebration deserves to feel extraordinary. What started as a small passion for balloon art has blossomed into a full-service decor atelier trusted by hundreds of families and brands across the city.'}
+              {content.paragraph1 || 'At Sais Creations Party Rentals & Decor Services, we believe every celebration deserves a beautiful setting. We offer custom event décor and high-quality rental props for weddings, birthdays, baby showers, housewarming ceremonies, festivals, corporate events, and more.'}
             </motion.p>
             <motion.p variants={fadeUp} className="font-body text-base md:text-lg text-[#2B2118]/60 leading-relaxed mb-10">
-              {content.paragraph2 || 'From a child\'s first birthday to grand wedding receptions, we pour the same artistry, warmth, and obsessive attention to detail into every event. Your vision becomes our canvas — and the smiles on your guests\' faces, our reward.'}
+              {content.paragraph2 || 'With creative designs, personalized service, and attention to every detail, we help turn your special moments into unforgettable memories. From intimate home celebrations to grand receptions, your vision becomes our canvas — and the joy on your guests\' faces, our greatest reward.'}
             </motion.p>
 
             <motion.ul variants={fadeUp} className="space-y-4 mb-11">
@@ -1306,7 +1309,7 @@ function Footer({ content = {} }) {
             <h4 className="font-accent font-light text-[11px] tracking-[0.4em] uppercase text-[#D9A5A0] mb-7">Explore</h4>
             <ul className="space-y-3.5">
               {NAV_LINKS.map((link) => {
-                const isPage = link === 'Products' || link === 'Gallery'
+                const isPage = link === 'Decors' || link === 'Rentals' || link === 'Gallery'
                 return (
                   <li key={link}>
                     {isPage ? (
@@ -1348,7 +1351,7 @@ function Footer({ content = {} }) {
 
         <div className="border-t border-[#FBF7F0]/8 mt-14 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
-            &copy; {new Date().getFullYear()} Sais Creation · All rights reserved
+            &copy; {new Date().getFullYear()} Sais Creations Decor Service &amp; Party Rentals LLC · All rights reserved
           </p>
           <p className="font-body italic text-xs text-[#FBF7F0]/25 flex items-center gap-1.5">
             Made with <Heart className="w-3 h-3 text-[#D9A5A0] fill-[#D9A5A0]" /> for beautiful celebrations
@@ -1427,6 +1430,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FBF7F0]">
+      <SEO
+        title="#1 Party Decor & Rental Services in San Jose, CA"
+        description="Sais Creations offers premium custom event decor, balloon artistry, stage design, floral arrangements, and party rental props for weddings, birthdays, baby showers & corporate events in San Jose, California and the Bay Area."
+        path="/"
+      />
       <Navbar cartCount={cartCount} user={user} isAdmin={isAdmin} onLogout={handleLogout} />
       <Hero content={siteContent.hero} />
       <MarqueeStrip />

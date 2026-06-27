@@ -20,6 +20,7 @@ import Gallery from './pages/admin/Gallery'
 import Users from './pages/admin/Users'
 import Orders from './pages/admin/Orders'
 import SiteContent from './pages/admin/SiteContent'
+import SeedData from './pages/SeedData'
 
 function App() {
   return (
@@ -31,10 +32,13 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/products" element={<ProductsPage />} />
+            <Route path="/decors" element={<ProductsPage pageType="decors" />} />
+            <Route path="/rentals" element={<ProductsPage pageType="rentals" />} />
             <Route path="/gallery" element={<GalleryPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/quote" element={<QuotePage />} />
             <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/seed" element={<SeedData />} />
             <Route
               path="/admin"
               element={

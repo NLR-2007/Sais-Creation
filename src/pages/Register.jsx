@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, Link } from 'react-router-dom'
+import SEO from '../components/SEO'
 import { useAuth } from '../context/AuthContext'
 import {
   Phone, ArrowRight, Sparkles, User, Mail, Lock, MapPin, ChevronLeft, Eye, EyeOff, Globe,
@@ -92,7 +93,7 @@ export default function Register() {
     setError('')
 
     if (!form.name.trim()) { setError('Please enter your full name'); return }
-    if (!form.email.trim()) { setError('Please enter your email address'); return }
+    if (form.email.trim() && !/\S+@\S+\.\S+/.test(form.email.trim())) { setError('Please enter a valid email address'); return }
     if (form.password.length < 6) { setError('Password must be at least 6 characters'); return }
     if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return }
     if (!form.phone.trim()) { setError('Please enter your phone number'); return }
@@ -135,6 +136,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-[#FBF7F0] relative overflow-hidden flex items-center justify-center px-4 py-12">
+      <SEO title="Create Account" description="Create a Sais Creation account to request quotes, track orders, and get personalized party decor recommendations." path="/register" noindex />
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#7B2D43]/[0.06] blur-[120px]" />
@@ -206,10 +208,10 @@ export default function Register() {
 
             {/* Email */}
             <div>
-              <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-1.5">Email Address</label>
+              <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-1.5">Email Address (Optional)</label>
               <div className="relative">
                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-[#B07D3F]"><Mail className="w-4 h-4" strokeWidth={1.5} /></span>
-                <input type="email" value={form.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="your@email.com" className="lux-field" required />
+                <input type="email" value={form.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="your@email.com" className="lux-field" />
               </div>
             </div>
 

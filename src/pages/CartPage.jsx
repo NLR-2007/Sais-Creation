@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
+import SEO from '../components/SEO'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -27,20 +28,25 @@ function Navbar({ user, isAdmin, onLogout }) {
     <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="fixed top-0 left-0 right-0 z-50">
       <div className={`mx-auto transition-all duration-500 ${scrolled ? `max-w-6xl mt-3 mx-3 sm:mx-6 lg:mx-auto ${mobileOpen ? 'rounded-[1.75rem]' : 'rounded-full'} bg-[#FBF7F0]/90 backdrop-blur-xl border border-[#B07D3F]/20 shadow-[0_18px_50px_-12px_rgba(59,31,43,0.18)] px-5 sm:px-7` : 'max-w-7xl px-4 sm:px-6 lg:px-8 border border-transparent'}`}>
         <div className="flex items-center justify-between py-3 md:py-3.5">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="relative w-11 h-11 flex items-center justify-center">
+          <div className="flex items-center gap-3 group">
+            <Link to="/" className="relative w-11 h-11 flex items-center justify-center">
               <span className="absolute inset-0 rotate-45 rounded-[10px] border border-[#B07D3F]/60 bg-gradient-to-br from-[#F3EADC]/80 to-transparent group-hover:rotate-[135deg] group-hover:border-[#7B2D43]/50 transition-all duration-700 shadow-[0_4px_14px_-4px_rgba(176,125,63,0.4)]" />
               <Sparkles className="w-[18px] h-[18px] text-[#7B2D43]" strokeWidth={1.5} />
-            </div>
+            </Link>
             <div className="leading-none">
-              <span className="font-display text-2xl md:text-[26px] font-semibold text-[#2B2118] tracking-wide block group-hover:text-[#7B2D43] transition-colors duration-300">Sais Creation</span>
-              <span className="font-accent font-light text-[8.5px] tracking-[0.5em] uppercase text-[#B07D3F]">Decor &nbsp;·&nbsp; Rentals</span>
+              <Link to="/" className="font-display text-2xl md:text-[26px] font-semibold text-[#2B2118] tracking-wide block group-hover:text-[#7B2D43] transition-colors duration-300">Sais Creation</Link>
+              <span className="font-accent font-light text-[8.5px] tracking-[0.5em] uppercase text-[#B07D3F]">
+                <Link to="/rentals" className="hover:text-[#7B2D43] transition-colors duration-300">Rentals</Link>
+                {' · '}
+                <Link to="/decors" className="hover:text-[#7B2D43] transition-colors duration-300">Decor</Link>
+              </span>
             </div>
-          </Link>
+          </div>
           <div className="hidden md:flex items-center gap-1">
             <Link to="/" className="font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">Home</Link>
-            <Link to="/products" className="font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">Products</Link>
             <Link to="/gallery" className="font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">Gallery</Link>
+            <Link to="/rentals" className="font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">Rentals</Link>
+            <Link to="/decors" className="font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">Decors</Link>
           </div>
           <div className="flex items-center gap-2.5">
             {user ? (
@@ -73,13 +79,14 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-[#FBF7F0]">
+      <SEO title="Your Cart" description="Review your selected party decor and rental items before requesting a quote from Sais Creation." path="/cart" noindex />
       <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} />
 
       <section className="pt-32 pb-8 md:pt-40 md:pb-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="mb-6">
-            <Link to="/products" className="inline-flex items-center gap-2 font-accent font-light text-[11px] tracking-[0.3em] uppercase text-[#7B2D43]/70 hover:text-[#7B2D43] transition-colors duration-300">
-              <ArrowLeft className="w-3.5 h-3.5" />Back to Products
+            <Link to="/decors" className="inline-flex items-center gap-2 font-accent font-light text-[11px] tracking-[0.3em] uppercase text-[#7B2D43]/70 hover:text-[#7B2D43] transition-colors duration-300">
+              <ArrowLeft className="w-3.5 h-3.5" />Browse Collection
             </Link>
           </motion.div>
 
@@ -106,8 +113,8 @@ export default function CartPage() {
               </div>
               <h3 className="font-display text-2xl font-semibold text-[#2B2118]/70 mb-2">Your cart is empty</h3>
               <p className="font-body italic text-[#2B2118]/40 mb-8">Browse our collection and add items you're interested in</p>
-              <Link to="/products" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.2em] uppercase shadow-[0_8px_24px_-8px_rgba(123,45,67,0.5)] hover:-translate-y-0.5 transition-all duration-400">
-                <Package className="w-4 h-4" strokeWidth={1.5} />Browse Products
+              <Link to="/decors" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.2em] uppercase shadow-[0_8px_24px_-8px_rgba(123,45,67,0.5)] hover:-translate-y-0.5 transition-all duration-400">
+                <Package className="w-4 h-4" strokeWidth={1.5} />Browse Collection
               </Link>
             </motion.div>
           ) : (

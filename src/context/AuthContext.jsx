@@ -95,11 +95,12 @@ export function AuthProvider({ children }) {
   }
 
   const registerWithEmail = async ({ name, email, password, phone, countryCode, address }) => {
-    const cred = await createUserWithEmailAndPassword(auth, email, password)
+    const authEmail = email || `${countryCode.replace('+', '')}${phone}@user.saiscreation.local`
+    const cred = await createUserWithEmailAndPassword(auth, authEmail, password)
     await updateProfile(cred.user, { displayName: name })
     const profile = {
       name,
-      email,
+      email: email || '',
       phone,
       countryCode,
       address,

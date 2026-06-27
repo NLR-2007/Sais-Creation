@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
+import SEO from '../components/SEO'
 import { db } from '../config/firebase'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
@@ -41,20 +42,22 @@ function Navbar({ user, isAdmin, onLogout }) {
           : 'max-w-7xl px-4 sm:px-6 lg:px-8 border border-transparent'
       }`}>
         <div className="flex items-center justify-between py-3 md:py-3.5">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="relative w-11 h-11 flex items-center justify-center">
+          <div className="flex items-center gap-3 group">
+            <Link to="/" className="relative w-11 h-11 flex items-center justify-center">
               <span className="absolute inset-0 rotate-45 rounded-[10px] border border-[#B07D3F]/60 bg-gradient-to-br from-[#F3EADC]/80 to-transparent group-hover:rotate-[135deg] group-hover:border-[#7B2D43]/50 transition-all duration-700 shadow-[0_4px_14px_-4px_rgba(176,125,63,0.4)]" />
               <Sparkles className="w-[18px] h-[18px] text-[#7B2D43]" strokeWidth={1.5} />
-            </div>
+            </Link>
             <div className="leading-none">
-              <span className="font-display text-2xl md:text-[26px] font-semibold text-[#2B2118] tracking-wide block group-hover:text-[#7B2D43] transition-colors duration-300">
+              <Link to="/" className="font-display text-2xl md:text-[26px] font-semibold text-[#2B2118] tracking-wide block group-hover:text-[#7B2D43] transition-colors duration-300">
                 Sais Creation
-              </span>
+              </Link>
               <span className="font-accent font-light text-[8.5px] tracking-[0.5em] uppercase text-[#B07D3F]">
-                Decor &nbsp;·&nbsp; Rentals
+                <Link to="/rentals" className="hover:text-[#7B2D43] transition-colors duration-300">Rentals</Link>
+                {' · '}
+                <Link to="/decors" className="hover:text-[#7B2D43] transition-colors duration-300">Decor</Link>
               </span>
             </div>
-          </Link>
+          </div>
 
           <div className="hidden md:flex items-center gap-1">
             <Link to="/" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
@@ -64,8 +67,11 @@ function Navbar({ user, isAdmin, onLogout }) {
               Gallery
               <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 w-1 h-1 rounded-full bg-[#7B2D43]" />
             </span>
-            <Link to="/products" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
-              Products
+            <Link to="/rentals" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
+              Rentals
+            </Link>
+            <Link to="/decors" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
+              Decors
             </Link>
             <a href="/#about" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
               About
@@ -109,8 +115,11 @@ function Navbar({ user, isAdmin, onLogout }) {
                 <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
                   Home <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
                 </Link>
-                <Link to="/products" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
-                  Products <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
+                <Link to="/rentals" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  Rentals <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
+                </Link>
+                <Link to="/decors" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  Decors <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
                 </Link>
                 <a href="/#about" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
                   About <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
@@ -182,6 +191,11 @@ export default function GalleryPage() {
 
   return (
     <div className="min-h-screen bg-[#FBF7F0]">
+      <SEO
+        title="Event Gallery - Wedding, Birthday & Party Decoration Photos"
+        description="View our portfolio of stunning event decorations: wedding receptions, birthday parties, baby showers, corporate galas, and more. See real events styled by Sais Creation in San Jose, CA."
+        path="/gallery"
+      />
       <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} />
 
       {/* Hero */}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, Link } from 'react-router-dom'
+import SEO from '../components/SEO'
 import { useAuth } from '../context/AuthContext'
 import {
   Phone, ArrowRight, Shield, Sparkles, Gem, Eye, EyeOff, KeyRound, ChevronLeft, Mail, Lock,
@@ -258,6 +259,7 @@ export default function Login() {
   // Normal login step
   return (
     <div className="min-h-screen bg-[#FBF7F0] relative overflow-hidden flex items-center justify-center px-4 py-12">
+      <SEO title="Sign In" description="Sign in to your Sais Creation account to manage orders, save favorites, and get personalized party decor quotes." path="/login" noindex />
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#D9A5A0]/[0.08] blur-[120px]" />
         <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#7B2D43]/[0.06] blur-[120px]" />

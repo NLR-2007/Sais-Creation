@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
+import SEO from '../components/SEO'
 import { db } from '../config/firebase'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
@@ -23,7 +24,7 @@ const fadeUp = {
 
 const staggerContainer = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }
 
-function Navbar({ user, isAdmin, onLogout }) {
+function Navbar({ user, isAdmin, onLogout, pageType }) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -45,20 +46,22 @@ function Navbar({ user, isAdmin, onLogout }) {
           : 'max-w-7xl px-4 sm:px-6 lg:px-8 border border-transparent'
       }`}>
         <div className="flex items-center justify-between py-3 md:py-3.5">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="relative w-11 h-11 flex items-center justify-center">
+          <div className="flex items-center gap-3 group">
+            <Link to="/" className="relative w-11 h-11 flex items-center justify-center">
               <span className="absolute inset-0 rotate-45 rounded-[10px] border border-[#B07D3F]/60 bg-gradient-to-br from-[#F3EADC]/80 to-transparent group-hover:rotate-[135deg] group-hover:border-[#7B2D43]/50 transition-all duration-700 shadow-[0_4px_14px_-4px_rgba(176,125,63,0.4)]" />
               <Sparkles className="w-[18px] h-[18px] text-[#7B2D43]" strokeWidth={1.5} />
-            </div>
+            </Link>
             <div className="leading-none">
-              <span className="font-display text-2xl md:text-[26px] font-semibold text-[#2B2118] tracking-wide block group-hover:text-[#7B2D43] transition-colors duration-300">
+              <Link to="/" className="font-display text-2xl md:text-[26px] font-semibold text-[#2B2118] tracking-wide block group-hover:text-[#7B2D43] transition-colors duration-300">
                 Sais Creation
-              </span>
+              </Link>
               <span className="font-accent font-light text-[8.5px] tracking-[0.5em] uppercase text-[#B07D3F]">
-                Decor &nbsp;·&nbsp; Rentals
+                <Link to="/rentals" className="hover:text-[#7B2D43] transition-colors duration-300">Rentals</Link>
+                {' · '}
+                <Link to="/decors" className="hover:text-[#7B2D43] transition-colors duration-300">Decor</Link>
               </span>
             </div>
-          </Link>
+          </div>
 
           <div className="hidden md:flex items-center gap-1">
             <Link to="/" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav">
@@ -67,10 +70,14 @@ function Navbar({ user, isAdmin, onLogout }) {
             <Link to="/gallery" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav">
               Gallery
             </Link>
-            <span className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#7B2D43] px-4 py-2 rounded-full bg-[#7B2D43]/[0.06]">
-              Products
-              <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 w-1 h-1 rounded-full bg-[#7B2D43]" />
-            </span>
+            <Link to="/rentals" className={`relative font-accent font-light text-[12px] tracking-[0.25em] uppercase px-4 py-2 rounded-full transition-all duration-300 group/nav ${pageType === 'rentals' ? 'text-[#7B2D43] bg-[#7B2D43]/[0.06]' : 'text-[#2B2118]/65 hover:text-[#7B2D43] hover:bg-[#7B2D43]/[0.05]'}`}>
+              Rentals
+              {pageType === 'rentals' && <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 w-1 h-1 rounded-full bg-[#7B2D43]" />}
+            </Link>
+            <Link to="/decors" className={`relative font-accent font-light text-[12px] tracking-[0.25em] uppercase px-4 py-2 rounded-full transition-all duration-300 group/nav ${pageType === 'decors' ? 'text-[#7B2D43] bg-[#7B2D43]/[0.06]' : 'text-[#2B2118]/65 hover:text-[#7B2D43] hover:bg-[#7B2D43]/[0.05]'}`}>
+              Decors
+              {pageType === 'decors' && <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 w-1 h-1 rounded-full bg-[#7B2D43]" />}
+            </Link>
             <a href="/#about" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav">
               About
             </a>
@@ -118,6 +125,12 @@ function Navbar({ user, isAdmin, onLogout }) {
                 </Link>
                 <Link to="/gallery" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
                   Gallery <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
+                </Link>
+                <Link to="/rentals" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  Rentals <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
+                </Link>
+                <Link to="/decors" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  Decors <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
                 </Link>
                 <a href="/#about" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
                   About <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
@@ -219,9 +232,9 @@ function ProductCard({ product, index, onAddToCart, inCart }) {
   )
 }
 
-export default function ProductsPage() {
-  const [products, setProducts] = useState([])
-  const [categories, setCategories] = useState([])
+export default function ProductsPage({ pageType }) {
+  const [allProducts, setAllProducts] = useState([])
+  const [allCategories, setAllCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTag, setSelectedTag] = useState('')
@@ -237,19 +250,36 @@ export default function ProductsPage() {
       try {
         const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'))
         const snap = await getDocs(q)
-        if (!cancelled) setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        if (!cancelled) setAllProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
       } catch {
-        if (!cancelled) setProducts([])
+        if (!cancelled) setAllProducts([])
       }
       try {
         const cq = query(collection(db, 'categories'), orderBy('order', 'asc'))
         const csnap = await getDocs(cq)
-        if (!cancelled) setCategories(csnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        if (!cancelled) setAllCategories(csnap.docs.map((d) => ({ id: d.id, ...d.data() })))
       } catch { /* no categories yet */ }
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
   }, [])
+
+  const categories = pageType
+    ? allCategories.filter((c) => (c.type || 'decors') === pageType)
+    : allCategories
+
+  const categoryIds = new Set(categories.map((c) => c.id))
+  const products = pageType
+    ? allProducts.filter((p) => p.categoryId && categoryIds.has(p.categoryId))
+    : allProducts
+
+  const isRentals = pageType === 'rentals'
+  const pageTitle = isRentals ? 'Rentals' : pageType === 'decors' ? 'Decors' : 'Products'
+  const pageSubtitle = isRentals
+    ? 'Explore our premium rental items for your special occasions'
+    : pageType === 'decors'
+    ? 'Discover our curated collection of beautiful decor pieces'
+    : 'Explore our complete collection of premium decor, curated pieces & event essentials'
 
   const handleLogout = async () => {
     await logout()
@@ -273,7 +303,12 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-[#FBF7F0]">
-      <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+      <SEO
+        title={pageType === 'decors' ? 'Event Decoration Services - Wedding, Birthday & Party Decor' : pageType === 'rentals' ? 'Party Rental Equipment - Chairs, Tables, Tents & Sound Systems' : 'All Products - Decor & Rental Collection'}
+        description={pageType === 'decors' ? 'Browse our premium event decoration collection: balloon artistry, stage backdrops, floral arrangements, and custom decor for weddings, birthdays, baby showers & corporate events in San Jose, CA.' : pageType === 'rentals' ? 'Rent high-quality party equipment in San Jose: chairs, tables, tents, canopies, lighting, sound systems, and stage setups. Delivery, setup & pickup included.' : 'Explore our complete collection of premium party decorations and rental equipment for events in San Jose, CA and the Bay Area.'}
+        path={pageType ? `/${pageType}` : '/products'}
+      />
+      <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} pageType={pageType} />
 
       {/* Hero Banner */}
       <section className="relative pt-32 pb-16 md:pt-40 md:pb-24 overflow-hidden">
@@ -303,16 +338,16 @@ export default function ProductsPage() {
           >
             <span className="inline-flex items-center gap-2.5 font-accent font-light text-[11px] tracking-[0.4em] uppercase mb-6 px-5 py-2 rounded-full border text-[#B07D3F] border-[#B07D3F]/25 bg-white/50 shadow-[0_2px_10px_rgba(59,31,43,0.04)]">
               <span className="block w-1 h-1 rounded-full bg-[#B07D3F]" />
-              Our Collection
+              {isRentals ? 'Rental Collection' : pageType === 'decors' ? 'Decor Collection' : 'Our Collection'}
               <span className="block w-1 h-1 rounded-full bg-[#B07D3F]" />
             </span>
 
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-semibold text-[#2B2118] leading-[1.08] tracking-[-0.01em] mb-4">
               Browse All{' '}
-              <em className="bronze-shimmer font-medium italic">Products</em>
+              <em className="bronze-shimmer font-medium italic">{pageTitle}</em>
             </h1>
             <p className="font-body text-base md:text-lg text-[#2B2118]/55 max-w-2xl mx-auto leading-relaxed italic">
-              Explore our complete collection of premium decor, curated pieces &amp; event essentials
+              {pageSubtitle}
             </p>
 
             <div className="flex items-center justify-center gap-4 mt-8">
@@ -331,24 +366,24 @@ export default function ProductsPage() {
       {/* Search & Filters */}
       <section className="sticky top-[72px] z-40 bg-[#FBF7F0]/90 backdrop-blur-xl border-b border-[#B07D3F]/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1 max-w-md">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B07D3F]" strokeWidth={1.5} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
+                placeholder={`Search ${pageTitle.toLowerCase()}...`}
                 className="w-full bg-white border border-[#B07D3F]/15 rounded-full py-3 pl-11 pr-4 font-body text-sm text-[#2B2118] placeholder:text-[#2B2118]/30 outline-none shadow-[0_2px_8px_rgba(59,31,43,0.04)] focus:border-[#7B2D43]/40 focus:shadow-[0_0_0_4px_rgba(123,45,67,0.06)] transition-all duration-300"
               />
             </div>
 
             {categories.length > 0 && (
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="appearance-none bg-white border border-[#B07D3F]/15 rounded-full py-3 pl-5 pr-10 font-accent font-light text-[11px] tracking-[0.15em] uppercase text-[#2B2118]/70 outline-none shadow-[0_2px_8px_rgba(59,31,43,0.04)] focus:border-[#7B2D43]/40 focus:shadow-[0_0_0_4px_rgba(123,45,67,0.06)] transition-all duration-300 cursor-pointer"
+                  className="appearance-none w-full sm:w-auto bg-white border border-[#B07D3F]/15 rounded-full py-3 pl-5 pr-10 font-accent font-light text-[11px] tracking-[0.15em] uppercase text-[#2B2118]/70 outline-none shadow-[0_2px_8px_rgba(59,31,43,0.04)] focus:border-[#7B2D43]/40 focus:shadow-[0_0_0_4px_rgba(123,45,67,0.06)] transition-all duration-300 cursor-pointer"
                 >
                   <option value="">All Categories</option>
                   {categories.map((cat) => (
@@ -370,7 +405,7 @@ export default function ProductsPage() {
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${showFilters ? 'rotate-180' : ''}`} />
                 </button>
 
-                <div className={`flex-wrap gap-2 ${showFilters ? 'flex' : 'hidden sm:flex'}`}>
+                <div className={`w-full sm:w-auto flex flex-wrap gap-2 ${showFilters ? '' : 'hidden sm:flex'}`}>
                   <button
                     onClick={() => setSelectedTag('')}
                     className={`px-4 py-2 rounded-full font-accent font-light text-[10px] tracking-[0.25em] uppercase border transition-all duration-300 ${
@@ -399,7 +434,7 @@ export default function ProductsPage() {
               </>
             )}
 
-            <div className="hidden sm:block font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F] ml-auto">
+            <div className="ml-auto font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F]">
               {filtered.length} {filtered.length === 1 ? 'product' : 'products'}
             </div>
           </div>
@@ -438,12 +473,12 @@ export default function ProductsPage() {
                 <Package className="w-8 h-8 text-[#B07D3F]/30" strokeWidth={1} />
               </div>
               <h3 className="font-display text-2xl font-semibold text-[#2B2118]/70 mb-2">
-                {searchQuery || selectedTag || selectedCategory ? 'No products match your search' : 'No products yet'}
+                {searchQuery || selectedTag || selectedCategory ? `No ${pageTitle.toLowerCase()} match your search` : `No ${pageTitle.toLowerCase()} yet`}
               </h3>
               <p className="font-body italic text-[#2B2118]/40 mb-6">
                 {searchQuery || selectedTag || selectedCategory
                   ? 'Try adjusting your search or filters'
-                  : 'Products will appear here once they are added'}
+                  : `${pageTitle} will appear here once they are added`}
               </p>
               {(searchQuery || selectedTag || selectedCategory) && (
                 <button
