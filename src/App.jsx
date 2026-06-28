@@ -49,7 +49,8 @@ function App() {
             >
               <Route index element={<Dashboard />} />
               <Route path="categories" element={<Categories />} />
-              <Route path="products" element={<Products />} />
+              <Route path="decors" element={<Products sectionType="decors" />} />
+              <Route path="rentals" element={<Products sectionType="rentals" />} />
               <Route path="gallery" element={<Gallery />} />
               <Route path="users" element={<Users />} />
               <Route path="orders" element={<Orders />} />

@@ -7,6 +7,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import {
   Package, Plus, Pencil, Trash2, X, Save, Upload, Search, Tag, Sparkles, ImagePlus,
+  Flower2, Armchair,
 } from 'lucide-react'
 
 const fadeUp = {
@@ -16,7 +17,7 @@ const fadeUp = {
 
 const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '', featured: false, photos: [] }
 
-export default function Products() {
+export default function Products({ sectionType }) {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -28,6 +29,12 @@ export default function Products() {
   const [search, setSearch] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [categories, setCategories] = useState([])
+  const [allCategories, setAllCategories] = useState([])
+
+  const isDecors = sectionType === 'decors'
+  const isRentals = sectionType === 'rentals'
+  const sectionLabel = isDecors ? 'Decor' : isRentals ? 'Rentals' : 'All'
+  const SectionIcon = isDecors ? Flower2 : isRentals ? Armchair : Package
 
   const fetchProducts = async () => {
     try {
@@ -53,16 +60,32 @@ export default function Products() {
       try {
         const cq = query(collection(db, 'categories'), orderBy('order', 'asc'))
         const csnap = await getDocs(cq)
-        if (!cancelled) setCategories(csnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        const all = csnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        if (!cancelled) {
+          setAllCategories(all)
+          if (sectionType) {
+            setCategories(all.filter((c) => (c.type || 'decors') === sectionType))
+          } else {
+            setCategories(all)
+          }
+        }
       } catch { /* no categories yet */ }
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [sectionType])
+
+  const sectionCategoryIds = sectionType
+    ? new Set(allCategories.filter((c) => (c.type || 'decors') === sectionType).map((c) => c.id))
+    : null
+
+  const sectionProducts = sectionCategoryIds
+    ? products.filter((p) => p.categoryId && sectionCategoryIds.has(p.categoryId))
+    : products
 
   const openCreate = () => {
     setEditing(null)
-    setForm(EMPTY_PRODUCT)
+    setForm({ ...EMPTY_PRODUCT, categoryId: categories.length > 0 ? categories[0].id : '' })
     setImageFile(null)
     setImagePreview('')
     setModalOpen(true)
@@ -162,29 +185,34 @@ export default function Products() {
     setDeleteConfirm(null)
   }
 
-  const filtered = products.filter((p) =>
+  const filtered = sectionProducts.filter((p) =>
     p.name?.toLowerCase().includes(search.toLowerCase()) ||
     p.desc?.toLowerCase().includes(search.toLowerCase())
   )
+
+  const getCategoryName = (catId) => {
+    const cat = allCategories.find((c) => c.id === catId)
+    return cat?.name || ''
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7B2D43] to-[#5C1F31] flex items-center justify-center shadow-[0_6px_18px_-6px_rgba(123,45,67,0.4)]">
-            <Package className="w-5 h-5 text-[#FBF7F0]" strokeWidth={1.5} />
+          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${isRentals ? 'from-[#B07D3F] to-[#8A5F2B]' : 'from-[#7B2D43] to-[#5C1F31]'} flex items-center justify-center shadow-[0_6px_18px_-6px_${isRentals ? 'rgba(176,125,63,0.4)' : 'rgba(123,45,67,0.4)'}]`}>
+            <SectionIcon className="w-5 h-5 text-[#FBF7F0]" strokeWidth={1.5} />
           </div>
           <div>
-            <h1 className="font-display text-2xl md:text-3xl font-semibold text-[#2B2118]">Products</h1>
+            <h1 className="font-display text-2xl md:text-3xl font-semibold text-[#2B2118]">{sectionLabel} Products</h1>
             <p className="font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F]">
-              {products.length} total products
+              {sectionProducts.length} {sectionLabel.toLowerCase()} product{sectionProducts.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
-        <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.2em] uppercase px-6 py-3 shadow-[0_8px_24px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_14px_36px_-8px_rgba(123,45,67,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-400">
+        <button onClick={openCreate} className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-br ${isRentals ? 'from-[#C4944A] via-[#B07D3F] to-[#8A5F2B] shadow-[0_8px_24px_-8px_rgba(176,125,63,0.5)] hover:shadow-[0_14px_36px_-8px_rgba(176,125,63,0.55)]' : 'from-[#8E3650] via-[#7B2D43] to-[#5C1F31] shadow-[0_8px_24px_-8px_rgba(123,45,67,0.5)] hover:shadow-[0_14px_36px_-8px_rgba(123,45,67,0.55)]'} text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.2em] uppercase px-6 py-3 inset_0_1px_0_rgba(255,255,255,0.18) hover:-translate-y-0.5 active:translate-y-0 transition-all duration-400`}>
           <Plus className="w-4 h-4" strokeWidth={2} />
-          Add Product
+          Add {sectionLabel} Product
         </button>
       </motion.div>
 
@@ -196,7 +224,7 @@ export default function Products() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products..."
+            placeholder={`Search ${sectionLabel.toLowerCase()} products...`}
             className="w-full bg-white border border-[#B07D3F]/15 rounded-full py-3 pl-11 pr-4 font-body text-sm text-[#2B2118] placeholder:text-[#2B2118]/30 outline-none shadow-[var(--shadow-sm)] focus:border-[#7B2D43]/40 focus:shadow-[0_0_0_4px_rgba(123,45,67,0.06)] transition-all duration-300"
           />
         </div>
@@ -216,14 +244,14 @@ export default function Products() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
           <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-[#F3EADC]/80 border border-[#B07D3F]/15 flex items-center justify-center">
-            <Package className="w-7 h-7 text-[#B07D3F]/30" strokeWidth={1} />
+            <SectionIcon className="w-7 h-7 text-[#B07D3F]/30" strokeWidth={1} />
           </div>
           <p className="font-body italic text-[#2B2118]/40 mb-2">
-            {search ? 'No products match your search' : 'No products yet'}
+            {search ? 'No products match your search' : `No ${sectionLabel.toLowerCase()} products yet`}
           </p>
           {!search && (
             <button onClick={openCreate} className="font-accent text-[12px] tracking-[0.15em] text-[#7B2D43] underline underline-offset-4 decoration-[#7B2D43]/30 hover:decoration-[#7B2D43]/70 transition-colors duration-300">
-              Add your first product
+              Add your first {sectionLabel.toLowerCase()} product
             </button>
           )}
         </div>
@@ -241,7 +269,7 @@ export default function Products() {
                   <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Package className="w-10 h-10 text-[#B07D3F]/20" strokeWidth={1} />
+                    <SectionIcon className="w-10 h-10 text-[#B07D3F]/20" strokeWidth={1} />
                   </div>
                 )}
                 {product.tag && (
@@ -275,7 +303,12 @@ export default function Products() {
 
               <div className="p-5">
                 <h3 className="font-display text-lg font-semibold text-[#2B2118] mb-1">{product.name}</h3>
-                <p className="font-body text-[13px] text-[#2B2118]/50 leading-relaxed line-clamp-2 mb-3">{product.desc}</p>
+                <p className="font-body text-[13px] text-[#2B2118]/50 leading-relaxed line-clamp-2 mb-2">{product.desc}</p>
+                {getCategoryName(product.categoryId) && (
+                  <p className="font-accent font-light text-[9px] tracking-[0.2em] uppercase text-[#B07D3F] mb-2">
+                    {getCategoryName(product.categoryId)}
+                  </p>
+                )}
                 {product.price && <p className="font-display italic text-lg text-[#B07D3F] font-semibold">{product.price}</p>}
               </div>
             </motion.div>
@@ -323,7 +356,7 @@ export default function Products() {
               {/* Modal header */}
               <div className="flex items-center justify-between px-7 py-5 border-b border-[#B07D3F]/10 bg-gradient-to-b from-[#F3EADC]/40 to-transparent">
                 <h3 className="font-display text-xl font-semibold text-[#2B2118]">
-                  {editing ? 'Edit Product' : 'New Product'}
+                  {editing ? `Edit ${sectionLabel} Product` : `New ${sectionLabel} Product`}
                 </h3>
                 <button onClick={() => setModalOpen(false)} className="p-2 rounded-full text-[#2B2118]/30 hover:text-[#7B2D43] hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
                   <X className="w-5 h-5" />
@@ -341,10 +374,10 @@ export default function Products() {
                       accept="image/*"
                       onChange={handleImageChange}
                       className="hidden"
-                      id="product-image"
+                      id={`product-image-${sectionType}`}
                     />
                     <label
-                      htmlFor="product-image"
+                      htmlFor={`product-image-${sectionType}`}
                       className="flex items-center justify-center w-full h-36 rounded-[1.25rem] border-2 border-dashed border-[#B07D3F]/20 hover:border-[#7B2D43]/30 bg-[#F3EADC]/30 cursor-pointer transition-colors duration-300 overflow-hidden"
                     >
                       {imagePreview ? (
@@ -368,7 +401,7 @@ export default function Products() {
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="e.g. Golden Arch Kit"
+                    placeholder={isDecors ? 'e.g. Golden Arch Kit' : isRentals ? 'e.g. Chiavari Chair Set' : 'Product name'}
                     className="lux-field !pl-5"
                     required
                   />
@@ -394,7 +427,7 @@ export default function Products() {
                       type="text"
                       value={form.price}
                       onChange={(e) => setForm({ ...form, price: e.target.value })}
-                      placeholder="₹2,499"
+                      placeholder="$49.99"
                       className="lux-field !pl-5"
                     />
                   </div>
@@ -410,7 +443,7 @@ export default function Products() {
                   </div>
                 </div>
 
-                {/* Category */}
+                {/* Category — only show categories for this section */}
                 {categories.length > 0 && (
                   <div>
                     <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Category</label>
@@ -419,17 +452,10 @@ export default function Products() {
                       onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
                       className="lux-field"
                     >
-                      <option value="">No category</option>
-                      <optgroup label="Decors">
-                        {categories.filter((c) => (c.type || 'decors') === 'decors').map((cat) => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="Rentals">
-                        {categories.filter((c) => c.type === 'rentals').map((cat) => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                      </optgroup>
+                      <option value="">Select a category</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
                     </select>
                   </div>
                 )}
@@ -479,10 +505,10 @@ export default function Products() {
                     multiple
                     onChange={handleGalleryUpload}
                     className="hidden"
-                    id="gallery-photos"
+                    id={`gallery-photos-${sectionType}`}
                   />
                   <label
-                    htmlFor="gallery-photos"
+                    htmlFor={`gallery-photos-${sectionType}`}
                     className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-[#B07D3F]/20 hover:border-[#7B2D43]/30 bg-[#F3EADC]/20 cursor-pointer transition-colors duration-300"
                   >
                     <ImagePlus className="w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />
@@ -505,7 +531,7 @@ export default function Products() {
                 <button
                   onClick={handleSave}
                   disabled={saving || !form.name.trim()}
-                  className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.15em] uppercase shadow-[0_8px_24px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_14px_36px_-8px_rgba(123,45,67,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-400 disabled:opacity-60 disabled:pointer-events-none"
+                  className={`flex-1 inline-flex items-center justify-center gap-2 py-3.5 rounded-full bg-gradient-to-br ${isRentals ? 'from-[#C4944A] via-[#B07D3F] to-[#8A5F2B] shadow-[0_8px_24px_-8px_rgba(176,125,63,0.5)]' : 'from-[#8E3650] via-[#7B2D43] to-[#5C1F31] shadow-[0_8px_24px_-8px_rgba(123,45,67,0.5)]'} text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.15em] uppercase hover:-translate-y-0.5 active:translate-y-0 transition-all duration-400 disabled:opacity-60 disabled:pointer-events-none`}
                 >
                   {saving ? (
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
