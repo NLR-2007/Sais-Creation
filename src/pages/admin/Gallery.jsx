@@ -5,6 +5,7 @@ import {
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, query,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+import compressImage from '../../utils/compressImage'
 import {
   Image, Plus, Pencil, Trash2, X, Save, Upload,
 } from 'lucide-react'
@@ -81,8 +82,9 @@ export default function Gallery() {
     setBulkUploading(true)
     try {
       for (const file of files) {
-        const storageRef = ref(storage, `gallery/${Date.now()}_${file.name}`)
-        await uploadBytes(storageRef, file)
+        const compressed = await compressImage(file)
+        const storageRef = ref(storage, `gallery/${Date.now()}_${compressed.name}`)
+        await uploadBytes(storageRef, compressed)
         const imageUrl = await getDownloadURL(storageRef)
         await addDoc(collection(db, 'gallery'), {
           imageUrl,
@@ -105,8 +107,9 @@ export default function Gallery() {
       let imageUrl = editing?.imageUrl || ''
 
       if (imageFile) {
-        const storageRef = ref(storage, `gallery/${Date.now()}_${imageFile.name}`)
-        await uploadBytes(storageRef, imageFile)
+        const compressed = await compressImage(imageFile)
+        const storageRef = ref(storage, `gallery/${Date.now()}_${compressed.name}`)
+        await uploadBytes(storageRef, compressed)
         imageUrl = await getDownloadURL(storageRef)
       }
 
@@ -210,7 +213,7 @@ export default function Gallery() {
               className="group relative aspect-square bg-[#F3EADC] rounded-[1.25rem] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all duration-500"
             >
               {img.imageUrl ? (
-                <img src={img.imageUrl} alt={img.label} className="w-full h-full object-cover" />
+                <img src={img.imageUrl} alt={img.label} className="w-full h-full object-contain" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <Image className="w-8 h-8 text-[#B07D3F]/20" strokeWidth={1} />
@@ -296,7 +299,7 @@ export default function Gallery() {
                     className="flex items-center justify-center w-full h-48 rounded-[1.25rem] border-2 border-dashed border-[#B07D3F]/20 hover:border-[#7B2D43]/30 bg-[#F3EADC]/30 cursor-pointer transition-colors duration-300 overflow-hidden"
                   >
                     {imagePreview ? (
-                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
                     ) : (
                       <div className="text-center">
                         <Upload className="w-8 h-8 text-[#B07D3F]/30 mx-auto mb-2" strokeWidth={1.5} />

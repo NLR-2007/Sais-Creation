@@ -8,6 +8,7 @@ import {
   query, orderBy, where, serverTimestamp,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import compressImage from '../utils/compressImage'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import {
@@ -250,7 +251,7 @@ function ReviewCard({ review, isOwner, onDelete }) {
               onClick={() => setLightboxImg(url)}
               className="w-20 h-20 rounded-xl overflow-hidden border border-[#B07D3F]/10 hover:border-[#7B2D43]/30 transition-all duration-300 hover:shadow-[0_4px_16px_-4px_rgba(123,45,67,0.25)]"
             >
-              <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+              <img src={url} alt="" className="w-full h-full object-contain bg-[#F3EADC]" loading="lazy" />
             </button>
           ))}
         </div>
@@ -376,8 +377,9 @@ export default function ProductDetail() {
       if (newPhotos.length > 0) {
         uploadedUrls = await Promise.all(
           newPhotos.map(async (file) => {
-            const storageRef = ref(storage, `reviews/${id}/${Date.now()}_${file.name}`)
-            await uploadBytes(storageRef, file)
+            const compressed = await compressImage(file)
+            const storageRef = ref(storage, `reviews/${id}/${Date.now()}_${compressed.name}`)
+            await uploadBytes(storageRef, compressed)
             return getDownloadURL(storageRef)
           })
         )
@@ -497,7 +499,7 @@ export default function ProductDetail() {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.4 }}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </AnimatePresence>
                     {allPhotos.length > 1 && (
@@ -551,7 +553,7 @@ export default function ProductDetail() {
                           : 'border-white/80 opacity-55 hover:opacity-100 hover:border-[#B07D3F]/40'
                       }`}
                     >
-                      <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      <img src={url} alt="" className="w-full h-full object-contain bg-[#F3EADC]" loading="lazy" />
                     </button>
                   ))}
                 </div>
@@ -638,7 +640,7 @@ export default function ProductDetail() {
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
               {customerPhotos.map((photo, i) => (
                 <div key={i} className="relative group aspect-square rounded-xl overflow-hidden border border-[#B07D3F]/10 hover:border-[#7B2D43]/30 transition-all duration-300 cursor-pointer shadow-[0_2px_8px_rgba(59,31,43,0.04)] hover:shadow-[0_8px_24px_-8px_rgba(123,45,67,0.2)]">
-                  <img src={photo.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  <img src={photo.url} alt="" className="w-full h-full object-contain bg-[#F3EADC] group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#2E1822]/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2">
                     <span className="font-accent text-[9px] text-white/80 truncate">{photo.userName}</span>
                   </div>
@@ -750,7 +752,7 @@ export default function ProductDetail() {
                     <div className="flex gap-2 mb-3 flex-wrap">
                       {photoPreview.map((url, i) => (
                         <div key={i} className="relative group">
-                          <img src={url} alt="" className="w-20 h-20 rounded-xl object-cover border border-[#B07D3F]/15" />
+                          <img src={url} alt="" className="w-20 h-20 rounded-xl object-contain bg-[#F3EADC] border border-[#B07D3F]/15" />
                           <button
                             type="button"
                             onClick={() => removeNewPhoto(i)}

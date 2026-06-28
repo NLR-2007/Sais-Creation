@@ -177,7 +177,7 @@ function ProductCard({ product, index, onAddToCart, inCart }) {
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
             loading="lazy"
           />
         ) : (

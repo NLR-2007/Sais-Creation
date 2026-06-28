@@ -5,6 +5,7 @@ import {
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, query,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+import compressImage from '../../utils/compressImage'
 import {
   LayoutList, Plus, Pencil, Trash2, X, Save, Upload, GripVertical,
 } from 'lucide-react'
@@ -85,8 +86,9 @@ export default function Categories() {
       let imageUrl = form.imageUrl
 
       if (imageFile) {
-        const storageRef = ref(storage, `categories/${Date.now()}_${imageFile.name}`)
-        await uploadBytes(storageRef, imageFile)
+        const compressed = await compressImage(imageFile)
+        const storageRef = ref(storage, `categories/${Date.now()}_${compressed.name}`)
+        await uploadBytes(storageRef, compressed)
         imageUrl = await getDownloadURL(storageRef)
       }
 
@@ -222,7 +224,7 @@ export default function Categories() {
 
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/50 border border-[#B07D3F]/15 overflow-hidden shrink-0">
                   {cat.imageUrl ? (
-                    <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
+                    <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-contain" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <LayoutList className="w-5 h-5 text-[#B07D3F]/25" strokeWidth={1} />
@@ -317,7 +319,7 @@ export default function Categories() {
                     className="flex items-center justify-center w-full h-36 rounded-[1.25rem] border-2 border-dashed border-[#B07D3F]/20 hover:border-[#7B2D43]/30 bg-[#F3EADC]/30 cursor-pointer transition-colors duration-300 overflow-hidden"
                   >
                     {imagePreview ? (
-                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
                     ) : (
                       <div className="text-center">
                         <Upload className="w-6 h-6 text-[#B07D3F]/40 mx-auto mb-2" strokeWidth={1.5} />

@@ -130,7 +130,7 @@ export default function CartPage() {
                     <div className="flex items-center gap-4 p-4 sm:p-5">
                       <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/50 overflow-hidden shrink-0">
                         {item.imageUrl ? (
-                          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-contain" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Package className="w-6 h-6 text-[#B07D3F]/25" strokeWidth={1} />

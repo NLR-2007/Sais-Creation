@@ -280,7 +280,7 @@ export default function GalleryPage() {
                     <img
                       src={img.imageUrl}
                       alt={img.label || 'Gallery photo'}
-                      className="w-full h-auto object-cover group-hover:scale-[1.04] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                      className="w-full h-auto object-contain group-hover:scale-[1.04] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
                       loading="lazy"
                     />
                   ) : (

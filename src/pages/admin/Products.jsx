@@ -5,6 +5,7 @@ import {
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, query,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+import compressImage from '../../utils/compressImage'
 import {
   Package, Plus, Pencil, Trash2, X, Save, Upload, Search, Tag, Sparkles, ImagePlus,
   Flower2, Armchair,
@@ -113,8 +114,9 @@ export default function Products({ sectionType }) {
     try {
       const urls = await Promise.all(
         files.map(async (file) => {
-          const storageRef = ref(storage, `products/gallery/${Date.now()}_${file.name}`)
-          await uploadBytes(storageRef, file)
+          const compressed = await compressImage(file)
+          const storageRef = ref(storage, `products/gallery/${Date.now()}_${compressed.name}`)
+          await uploadBytes(storageRef, compressed)
           return getDownloadURL(storageRef)
         })
       )
@@ -138,8 +140,9 @@ export default function Products({ sectionType }) {
       let imageUrl = form.imageUrl
 
       if (imageFile) {
-        const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`)
-        await uploadBytes(storageRef, imageFile)
+        const compressed = await compressImage(imageFile)
+        const storageRef = ref(storage, `products/${Date.now()}_${compressed.name}`)
+        await uploadBytes(storageRef, compressed)
         imageUrl = await getDownloadURL(storageRef)
       }
 
@@ -266,7 +269,7 @@ export default function Products({ sectionType }) {
               {/* Image */}
               <div className="relative h-44 bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/50 overflow-hidden">
                 {product.imageUrl ? (
-                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <SectionIcon className="w-10 h-10 text-[#B07D3F]/20" strokeWidth={1} />
@@ -381,7 +384,7 @@ export default function Products({ sectionType }) {
                       className="flex items-center justify-center w-full h-36 rounded-[1.25rem] border-2 border-dashed border-[#B07D3F]/20 hover:border-[#7B2D43]/30 bg-[#F3EADC]/30 cursor-pointer transition-colors duration-300 overflow-hidden"
                     >
                       {imagePreview ? (
-                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                        <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
                       ) : (
                         <div className="text-center">
                           <Upload className="w-6 h-6 text-[#B07D3F]/40 mx-auto mb-2" strokeWidth={1.5} />
@@ -487,7 +490,7 @@ export default function Products({ sectionType }) {
                     <div className="grid grid-cols-4 gap-2 mb-3">
                       {form.photos.map((url, idx) => (
                         <div key={idx} className="relative group/photo rounded-xl overflow-hidden aspect-square">
-                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <img src={url} alt="" className="w-full h-full object-contain bg-[#F3EADC]" />
                           <button
                             type="button"
                             onClick={() => removeGalleryPhoto(idx)}

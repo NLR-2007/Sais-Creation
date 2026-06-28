@@ -4,7 +4,7 @@ import { db } from '../../config/firebase'
 import { collection, getDocs, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore'
 import {
   ClipboardList, Eye, Trash2, X, Package, User, Mail, Phone, MapPin,
-  CheckCircle, Clock, MessageSquare, Archive,
+  CheckCircle, Clock, MessageSquare, Archive, MessageCircle,
 } from 'lucide-react'
 
 const fadeUp = {
@@ -158,6 +158,16 @@ export default function Orders() {
                   </div>
 
                   <div className="flex items-center gap-2 sm:gap-3">
+                    {order.sentVia && (
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full font-accent font-light text-[8px] tracking-[0.15em] uppercase border ${
+                        order.sentVia === 'email'
+                          ? 'bg-violet-50 text-violet-600 border-violet-200'
+                          : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                      }`}>
+                        {order.sentVia === 'email' ? <Mail className="w-2.5 h-2.5" strokeWidth={1.5} /> : <MessageCircle className="w-2.5 h-2.5" strokeWidth={1.5} />}
+                        {order.sentVia}
+                      </span>
+                    )}
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-accent font-light text-[9px] tracking-[0.2em] uppercase border ${sc.color}`}>
                       <StatusIcon className="w-3 h-3" strokeWidth={1.5} />
                       {sc.label}
@@ -203,6 +213,12 @@ export default function Orders() {
                     <p className="flex items-center gap-2 font-body text-sm text-[#2B2118]"><Phone className="w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />{viewOrder.customerPhone}</p>
                     {viewOrder.customerEmail && <p className="flex items-center gap-2 font-body text-sm text-[#2B2118]"><Mail className="w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />{viewOrder.customerEmail}</p>}
                     {viewOrder.customerAddress && <p className="flex items-start gap-2 font-body text-sm text-[#2B2118]"><MapPin className="w-4 h-4 text-[#B07D3F]/50 shrink-0 mt-0.5" strokeWidth={1.5} />{viewOrder.customerAddress}</p>}
+                    {viewOrder.sentVia && (
+                      <p className="flex items-center gap-2 font-body text-sm text-[#2B2118]">
+                        {viewOrder.sentVia === 'email' ? <Mail className="w-4 h-4 text-violet-400" strokeWidth={1.5} /> : <MessageCircle className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />}
+                        Sent via <span className="font-semibold capitalize">{viewOrder.sentVia}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -232,7 +248,7 @@ export default function Orders() {
                       <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[#FBF7F0] border border-[#B07D3F]/10">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/50 overflow-hidden shrink-0">
                           {item.imageUrl ? (
-                            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-contain" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center"><Package className="w-3.5 h-3.5 text-[#B07D3F]/25" strokeWidth={1} /></div>
                           )}

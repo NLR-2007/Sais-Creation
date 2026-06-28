@@ -674,7 +674,7 @@ function Products({ items = PRODUCTS }) {
                 <div className={`relative h-60 m-3 mb-0 rounded-[1.35rem] bg-gradient-to-br overflow-hidden ${GRADIENTS[i % GRADIENTS.length]} flex items-center justify-center`}>
                   <span className="shine absolute top-0 bottom-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] z-10" />
                   {hasImage ? (
-                    <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+                    <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-contain group-hover:scale-110 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]" />
                   ) : (
                     <div className="absolute inset-0 p-6 group-hover:scale-110 group-hover:-rotate-1 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]">
                       <ProductArt id={typeof product.id === 'number' ? product.id : i + 1} />
@@ -773,7 +773,7 @@ function Gallery({ images = GALLERY_IMAGES }) {
                   style={{ height }}
                 >
                   {hasImage ? (
-                    <img src={img.imageUrl} alt={img.label || ''} className="w-full h-full object-cover" />
+                    <img src={img.imageUrl} alt={img.label || ''} className="w-full h-full object-contain" loading="lazy" />
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                       <TileIcon className="w-7 h-7 text-[#7B2D43]/30 group-hover:scale-110 transition-transform duration-700" strokeWidth={1} />
