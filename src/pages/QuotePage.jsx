@@ -37,7 +37,7 @@ function SuccessScreen({ method, whatsappUrl }) {
           <CheckCircle className="w-10 h-10 text-green-500" strokeWidth={1.5} />
         </div>
         <h2 className="font-display text-3xl font-semibold text-[#2B2118] mb-3">Quote Submitted!</h2>
-        <p className="font-body text-[#2B2118]/55 leading-relaxed mb-3">
+        <p className="font-body text-[15px] text-[#2B2118]/80 md:text-[#2B2118]/55 leading-relaxed mb-3">
           Thank you! Your quote request has been saved successfully.
         </p>
 
@@ -51,13 +51,13 @@ function SuccessScreen({ method, whatsappUrl }) {
                     Redirecting to WhatsApp in {countdown}s
                   </span>
                 </div>
-                <p className="font-body text-sm text-[#2B2118]/40 italic">
+                <p className="font-body text-[14px] text-[#2B2118]/65 md:text-[#2B2118]/40 italic">
                   Please wait, you'll be connected with us shortly...
                 </p>
               </div>
             ) : (
               <div className="mb-8">
-                <p className="font-body text-sm text-[#2B2118]/40 italic mb-4">
+                <p className="font-body text-[14px] text-[#2B2118]/65 md:text-[#2B2118]/40 italic mb-4">
                   If WhatsApp didn't open automatically, tap the button below.
                 </p>
                 <a
@@ -79,7 +79,7 @@ function SuccessScreen({ method, whatsappUrl }) {
                 Email Sent Successfully
               </span>
             </div>
-            <p className="font-body text-sm text-[#2B2118]/40 italic">
+            <p className="font-body text-[14px] text-[#2B2118]/65 md:text-[#2B2118]/40 italic">
               We've sent a confirmation to your email. Our team will get back to you shortly!
             </p>
           </div>
@@ -126,7 +126,7 @@ export default function QuotePage() {
       })
 
       if (sendMethod === 'whatsapp') {
-        const itemsList = cart.map((item, i) => `${i + 1}. ${item.name}`).join('\n')
+        const itemsList = cart.map((item, i) => `${i + 1}. ${item.name}${item.imageUrl ? `\n${item.imageUrl}` : ''}`).join('\n\n')
         const message = `Hi Sais Creation! I'd like to get a quote.\n\n*Customer Details:*\nName: ${form.name}\nPhone: ${form.phone}${form.email ? `\nEmail: ${form.email}` : ''}\n\n*Requested Items:*\n${itemsList}\n\nPlease share pricing and availability. Thank you!`
         const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
         setSuccess({ method: 'whatsapp', whatsappUrl })
@@ -159,7 +159,7 @@ export default function QuotePage() {
             <Package className="w-8 h-8 text-[#B07D3F]/30" strokeWidth={1} />
           </div>
           <h3 className="font-display text-2xl font-semibold text-[#2B2118]/70 mb-2">No items in cart</h3>
-          <p className="font-body italic text-[#2B2118]/40 mb-8">Add some products to your cart first</p>
+          <p className="font-body italic text-[15px] text-[#2B2118]/65 md:text-[#2B2118]/40 mb-8">Add some products to your cart first</p>
           <Link to="/decors" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.2em] uppercase shadow-[0_8px_24px_-8px_rgba(123,45,67,0.5)] hover:-translate-y-0.5 transition-all duration-400">
             Browse Collection
           </Link>
@@ -186,7 +186,7 @@ export default function QuotePage() {
             </div>
             <h1 className="font-display text-3xl md:text-4xl font-semibold text-[#2B2118]">Get a Quote</h1>
           </div>
-          <p className="font-body italic text-[#2B2118]/50 ml-12">Fill in your details and we'll get back to you with pricing</p>
+          <p className="font-body italic text-[15px] text-[#2B2118]/75 md:text-[#2B2118]/50 ml-12">Fill in your details and we'll get back to you with pricing</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">

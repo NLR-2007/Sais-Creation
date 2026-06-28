@@ -1,12 +1,14 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
+
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 import { Link, useNavigate } from 'react-router-dom'
 import SEO from '../components/SEO'
 import {
-  Menu, X, ShoppingCart, MessageCircle, Star, ChevronLeft, ChevronRight,
+  Menu, X, MessageCircle, Star, ChevronLeft, ChevronRight,
   PartyPopper, Sparkles, Flower2, Lamp, Phone,
-  ArrowRight, Heart, Check, Send, Crown, Gem,
-  MapPin, Clock, CalendarDays, User, LogIn, LogOut, Shield, Eye
+  ArrowRight, Heart, Send, Crown, Gem,
+  MapPin, Clock, CalendarDays, User, LogIn, LogOut, Shield, Eye, ShoppingCart, Check
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
@@ -59,15 +61,19 @@ const Ornament = ({ light = false }) => (
   </div>
 )
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 50 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.85, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
-  }),
-}
+const fadeUp = isMobile
+  ? { hidden: { opacity: 0 }, visible: () => ({ opacity: 1, transition: { duration: 0.3 } }) }
+  : {
+      hidden: { opacity: 0, y: 50 },
+      visible: (i = 0) => ({
+        opacity: 1, y: 0,
+        transition: { duration: 0.85, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
+      }),
+    }
 
-const staggerContainer = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }
+const staggerContainer = isMobile
+  ? { hidden: {}, visible: {} }
+  : { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }
 
 function SectionHeading({ eyebrow, title, titleItalic, subtitle, light = false }) {
   return (
@@ -94,7 +100,7 @@ function SectionHeading({ eyebrow, title, titleItalic, subtitle, light = false }
         )}
       </h2>
       {subtitle && (
-        <p className={`font-body text-base md:text-lg max-w-2xl mx-auto mt-6 leading-relaxed ${light ? 'text-[#FBF7F0]/60' : 'text-[#2B2118]/55'}`}>
+        <p className={`font-body text-[15px] md:text-lg max-w-2xl mx-auto mt-6 leading-relaxed ${light ? 'text-[#FBF7F0]/80 md:text-[#FBF7F0]/60' : 'text-[#2B2118]/80 md:text-[#2B2118]/55'}`}>
           {subtitle}
         </p>
       )}
@@ -250,13 +256,13 @@ function Navbar({ cartCount, user, isAdmin, onLogout }) {
 
   return (
     <motion.nav
-      initial={{ y: -100 }} animate={{ y: 0 }}
-      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+      initial={isMobile ? false : { y: -100 }} animate={{ y: 0 }}
+      transition={isMobile ? { duration: 0 } : { duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
       className="fixed top-0 left-0 right-0 z-50"
     >
       <div className={`mx-auto transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         scrolled
-          ? `max-w-6xl mt-3 mx-3 sm:mx-6 lg:mx-auto ${mobileOpen ? 'rounded-[1.75rem]' : 'rounded-full'} bg-[#FBF7F0]/90 backdrop-blur-xl border border-[#B07D3F]/20 shadow-[0_18px_50px_-12px_rgba(59,31,43,0.18)] px-5 sm:px-7`
+          ? `max-w-6xl mt-3 mx-3 sm:mx-6 lg:mx-auto ${mobileOpen ? 'rounded-[1.75rem]' : 'rounded-full'} bg-[#FBF7F0]/95 md:bg-[#FBF7F0]/90 md:backdrop-blur-xl border border-[#B07D3F]/20 shadow-[0_18px_50px_-12px_rgba(59,31,43,0.18)] px-5 sm:px-7`
           : 'max-w-7xl px-4 sm:px-6 lg:px-8 border border-transparent'
       }`}>
         <div className="flex items-center justify-between py-3 md:py-3.5">
@@ -352,7 +358,7 @@ function Navbar({ cartCount, user, isAdmin, onLogout }) {
             <motion.div
               initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.35 }}
-              className={`md:hidden overflow-hidden ${scrolled ? '' : 'rounded-[1.75rem] bg-[#FBF7F0]/95 backdrop-blur-xl border border-[#B07D3F]/15 shadow-[0_24px_60px_-16px_rgba(59,31,43,0.25)] mb-3'}`}
+              className={`md:hidden overflow-hidden ${scrolled ? '' : 'rounded-[1.75rem] bg-[#FBF7F0]/98 border border-[#B07D3F]/15 shadow-[0_24px_60px_-16px_rgba(59,31,43,0.25)] mb-3'}`}
             >
               <div className="px-3 py-4 space-y-1">
                 {NAV_LINKS.map((link, i) => {
@@ -419,7 +425,8 @@ function Navbar({ cartCount, user, isAdmin, onLogout }) {
 
 /* ─── HERO ─── */
 function Hero({ content = {} }) {
-  const particles = Array.from({ length: 14 }, (_, i) => ({
+  const particleCount = isMobile ? 0 : 14
+  const particles = Array.from({ length: particleCount }, (_, i) => ({
     left: `${(i * 53) % 100}%`,
     size: 3 + ((i * 7) % 5),
     duration: 10 + ((i * 3) % 9),
@@ -431,10 +438,12 @@ function Hero({ content = {} }) {
       {/* Warm atmosphere — layered gradient mesh */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_35%,rgba(243,234,220,0.9),transparent_75%)]" />
-        <div className="absolute top-[6%] left-[10%] w-96 h-96 rounded-full bg-[#D9A5A0]/25 blur-[110px]" />
-        <div className="absolute bottom-[10%] right-[6%] w-[30rem] h-[30rem] rounded-full bg-[#E2BF7E]/28 blur-[130px]" />
-        <div className="absolute top-[42%] right-[24%] w-64 h-64 rounded-full bg-[#7B2D43]/8 blur-[90px]" />
-        <div className="absolute bottom-[20%] left-[18%] w-72 h-72 rounded-full bg-[#F2D9D2]/40 blur-[100px]" />
+        {!isMobile && <>
+          <div className="absolute top-[6%] left-[10%] w-96 h-96 rounded-full bg-[#D9A5A0]/25 blur-[110px]" />
+          <div className="absolute bottom-[10%] right-[6%] w-[30rem] h-[30rem] rounded-full bg-[#E2BF7E]/28 blur-[130px]" />
+          <div className="absolute top-[42%] right-[24%] w-64 h-64 rounded-full bg-[#7B2D43]/8 blur-[90px]" />
+          <div className="absolute bottom-[20%] left-[18%] w-72 h-72 rounded-full bg-[#F2D9D2]/40 blur-[100px]" />
+        </>}
       </div>
       <div className="grain" />
 
@@ -475,11 +484,12 @@ function Hero({ content = {} }) {
 
       <div className="relative z-10 text-center px-4 max-w-5xl mx-auto pt-24 pb-16">
         <motion.div
-          initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          initial={isMobile ? { opacity: 0 } : { opacity: 0, y: -16 }}
+          animate={isMobile ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          transition={{ duration: isMobile ? 0.3 : 1, ease: [0.22, 1, 0.36, 1] }}
           className="mb-10"
         >
-          <span className="inline-flex items-center gap-3 font-accent font-light text-[10px] md:text-[11px] tracking-[0.45em] uppercase text-[#7B2D43]/85 bg-white/55 backdrop-blur-sm border border-[#B07D3F]/25 rounded-full px-6 py-3 shadow-[0_8px_24px_-8px_rgba(59,31,43,0.15)]">
+          <span className="inline-flex items-center gap-3 font-accent font-light text-[10px] md:text-[11px] tracking-[0.45em] uppercase text-[#7B2D43]/85 bg-white/80 md:bg-white/55 md:backdrop-blur-sm border border-[#B07D3F]/25 rounded-full px-6 py-3 shadow-[0_8px_24px_-8px_rgba(59,31,43,0.15)]">
             <span className="relative block w-1.5 h-1.5 rounded-full bg-[#B07D3F] pulse-dot" />
             {content.badge || 'Elegant Traditional Décor, Premium Rental Collections'}
           </span>
@@ -487,15 +497,15 @@ function Hero({ content = {} }) {
 
         <h1 className="font-display font-semibold text-[#2B2118] leading-[0.98] mb-8">
           <motion.span
-            initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            transition={{ duration: isMobile ? 0.3 : 1, delay: isMobile ? 0 : 0.25 }}
             className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-[-0.01em]"
           >
             {content.title || 'Where Celebrations'}
           </motion.span>
           <motion.span
-            initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            transition={{ duration: isMobile ? 0.3 : 1, delay: isMobile ? 0 : 0.45 }}
             className="block text-6xl sm:text-7xl md:text-8xl lg:text-9xl italic font-medium bronze-shimmer py-2"
           >
             {content.titleItalic || 'Become Art'}
@@ -503,16 +513,16 @@ function Hero({ content = {} }) {
         </h1>
 
         <motion.p
-          initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.7 }}
-          className="font-body text-base md:text-lg lg:text-xl text-[#2B2118]/55 max-w-xl mx-auto mb-12 leading-relaxed italic"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ duration: isMobile ? 0.3 : 0.9, delay: isMobile ? 0 : 0.7 }}
+          className="font-body text-[15px] md:text-lg lg:text-xl text-[#2B2118]/80 md:text-[#2B2118]/55 max-w-xl mx-auto mb-12 leading-relaxed italic"
         >
           {content.subtitle || 'Custom event décor and high-quality rental props for weddings, birthdays, baby showers, festivals & more — crafted for moments you will never forget.'}
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.9 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ duration: isMobile ? 0.3 : 0.9, delay: isMobile ? 0 : 0.9 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-5"
         >
           <Link to="/decors" className={BTN_PRIMARY}>
@@ -532,7 +542,7 @@ function Hero({ content = {} }) {
 
         {/* Trust row */}
         <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 1.25 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: isMobile ? 0.3 : 1, delay: isMobile ? 0 : 1.25 }}
           className="mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3"
         >
           {[
@@ -542,24 +552,26 @@ function Hero({ content = {} }) {
           ].map(([label], i) => (
             <span key={label} className="flex items-center gap-8">
               {i > 0 && <span className="hidden sm:block w-1 h-1 rounded-full bg-[#B07D3F]/50" />}
-              <span className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/45">{label}</span>
+              <span className="font-accent font-light text-[12px] md:text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/70 md:text-[#2B2118]/45">{label}</span>
             </span>
           ))}
         </motion.div>
       </div>
 
       {/* Scroll cue */}
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
-        className="absolute bottom-8 md:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
-      >
-        <span className="font-accent font-light text-[9px] tracking-[0.45em] uppercase text-[#2B2118]/35">Scroll</span>
-        <motion.span
-          animate={{ scaleY: [1, 0.4, 1], opacity: [0.7, 0.25, 0.7] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="block w-px h-12 bg-gradient-to-b from-[#B07D3F] to-transparent origin-top"
-        />
-      </motion.div>
+      {!isMobile && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
+          className="absolute bottom-8 md:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
+        >
+          <span className="font-accent font-light text-[9px] tracking-[0.45em] uppercase text-[#2B2118]/35">Scroll</span>
+          <motion.span
+            animate={{ scaleY: [1, 0.4, 1], opacity: [0.7, 0.25, 0.7] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="block w-px h-12 bg-gradient-to-b from-[#B07D3F] to-transparent origin-top"
+          />
+        </motion.div>
+      )}
     </section>
   )
 }
@@ -592,8 +604,10 @@ function Services() {
   return (
     <section className="py-24 md:py-36 bg-[#F3EADC] relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-20 bg-gradient-to-b from-[#B07D3F]/50 to-transparent" />
-      <div className="absolute -top-20 -right-24 w-96 h-96 rounded-full bg-[#D9A5A0]/15 blur-[110px]" />
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-[#E2BF7E]/18 blur-[110px]" />
+      {!isMobile && <>
+        <div className="absolute -top-20 -right-24 w-96 h-96 rounded-full bg-[#D9A5A0]/15 blur-[110px]" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-[#E2BF7E]/18 blur-[110px]" />
+      </>}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <SectionHeading
@@ -623,7 +637,7 @@ function Services() {
                 <service.icon className="w-6 h-6 text-[#7B2D43] relative z-10 group-hover:scale-110 transition-transform duration-500" strokeWidth={1.4} />
               </div>
               <h3 className="font-display text-[22px] font-semibold text-[#2B2118] mb-3 group-hover:text-[#7B2D43] transition-colors duration-500">{service.title}</h3>
-              <p className="font-body text-[15px] text-[#2B2118]/55 leading-relaxed">{service.desc}</p>
+              <p className="font-body text-[15px] text-[#2B2118]/80 md:text-[#2B2118]/55 leading-relaxed">{service.desc}</p>
 
               <span className="mt-7 inline-flex items-center gap-2 font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500">
                 Crafted to order <ArrowRight className="w-3 h-3" />
@@ -639,7 +653,6 @@ function Services() {
 /* ─── PRODUCT DETAIL MODAL ─── */
 /* ─── PRODUCTS ─── */
 function Products({ items = PRODUCTS }) {
-  const { addToCart, isInCart } = useCart()
   const GRADIENTS = [
     'from-[#E2BF7E]/45 to-[#D9A5A0]/35', 'from-[#D9A5A0]/45 to-[#E2BF7E]/30', 'from-[#F3EADC] to-[#B07D3F]/30',
     'from-[#D9A5A0]/40 to-[#7B2D43]/15', 'from-[#E2BF7E]/35 to-[#3B1F2B]/12', 'from-[#F3EADC] to-[#D9A5A0]/45',
@@ -647,8 +660,10 @@ function Products({ items = PRODUCTS }) {
 
   return (
     <section id="products" className="py-24 md:py-36 bg-[#FBF7F0] relative overflow-hidden">
-      <div className="absolute top-[10%] -left-28 w-[26rem] h-[26rem] rounded-full bg-[#F2D9D2]/35 blur-[120px]" />
-      <div className="absolute bottom-[6%] -right-28 w-[26rem] h-[26rem] rounded-full bg-[#E2BF7E]/20 blur-[120px]" />
+      {!isMobile && <>
+        <div className="absolute top-[10%] -left-28 w-[26rem] h-[26rem] rounded-full bg-[#F2D9D2]/35 blur-[120px]" />
+        <div className="absolute bottom-[6%] -right-28 w-[26rem] h-[26rem] rounded-full bg-[#E2BF7E]/20 blur-[120px]" />
+      </>}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <SectionHeading
@@ -664,7 +679,6 @@ function Products({ items = PRODUCTS }) {
         >
           {items.map((product, i) => {
             const pid = product.id || `home-${i}`
-            const inCart = isInCart(pid)
             const hasImage = !!product.imageUrl
             return (
               <motion.div
@@ -674,7 +688,7 @@ function Products({ items = PRODUCTS }) {
                 <div className={`relative h-60 m-3 mb-0 rounded-[1.35rem] bg-gradient-to-br overflow-hidden ${GRADIENTS[i % GRADIENTS.length]} flex items-center justify-center`}>
                   <span className="shine absolute top-0 bottom-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] z-10" />
                   {hasImage ? (
-                    <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-contain group-hover:scale-110 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+                    <img src={product.imageUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-contain group-hover:scale-110 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]" />
                   ) : (
                     <div className="absolute inset-0 p-6 group-hover:scale-110 group-hover:-rotate-1 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]">
                       <ProductArt id={typeof product.id === 'number' ? product.id : i + 1} />
@@ -694,30 +708,15 @@ function Products({ items = PRODUCTS }) {
                       <span className="font-display italic text-lg text-[#B07D3F] font-semibold whitespace-nowrap mt-1">{product.price}</span>
                     )}
                   </div>
-                  <p className="font-body text-[14px] text-[#2B2118]/50 mb-6 leading-relaxed line-clamp-2">{product.desc}</p>
+                  <p className="font-body text-[15px] md:text-[14px] text-[#2B2118]/75 md:text-[#2B2118]/50 mb-6 leading-relaxed line-clamp-2">{product.desc}</p>
 
-                  <div className="flex flex-col gap-2.5">
-                    <Link
-                      to={`/product/${pid}`}
-                      className="w-full font-accent text-[10px] tracking-[0.2em] uppercase py-3.5 rounded-full transition-all duration-400 flex items-center justify-center gap-2 border border-[#B07D3F]/25 bg-white text-[#7B2D43] font-light hover:border-[#7B2D43]/50 hover:bg-[#7B2D43]/[0.04] hover:-translate-y-0.5 hover:shadow-[0_10px_26px_-10px_rgba(123,45,67,0.25)]"
-                    >
-                      <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      Know More
-                    </Link>
-                    <button
-                      onClick={() => addToCart({ id: pid, name: product.name, price: product.price || '', imageUrl: product.imageUrl || '' })}
-                      disabled={inCart}
-                      className={`w-full font-accent text-[10px] tracking-[0.25em] uppercase py-4 px-6 rounded-full transition-all duration-400 flex items-center justify-center gap-2.5 ${
-                        inCart
-                          ? 'bg-green-50 text-green-700 border border-green-200 font-light cursor-default'
-                          : 'bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-medium shadow-[0_10px_26px_-10px_rgba(123,45,67,0.55),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_16px_38px_-10px_rgba(123,45,67,0.6)] hover:-translate-y-0.5 active:translate-y-0'
-                      }`}
-                    >
-                      {inCart
-                        ? (<><Check className="w-4 h-4" /> Added</>)
-                        : (<><ShoppingCart className="w-4 h-4" strokeWidth={1.6} /> Add to Cart</>)}
-                    </button>
-                  </div>
+                  <Link
+                    to={`/product/${pid}`}
+                    className="w-full font-accent text-[10px] tracking-[0.25em] uppercase py-4 px-6 rounded-full transition-all duration-400 flex items-center justify-center gap-2.5 bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-medium shadow-[0_10px_26px_-10px_rgba(123,45,67,0.55),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_16px_38px_-10px_rgba(123,45,67,0.6)] hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    View & Select Style
+                  </Link>
                 </div>
               </motion.div>
             )
@@ -747,7 +746,7 @@ function Gallery({ images = GALLERY_IMAGES }) {
 
   return (
     <section id="gallery" className="py-24 md:py-36 bg-[#F3EADC] relative overflow-hidden">
-      <div className="absolute -top-24 left-1/4 w-96 h-96 rounded-full bg-[#FBF7F0]/70 blur-[100px]" />
+      {!isMobile && <div className="absolute -top-24 left-1/4 w-96 h-96 rounded-full bg-[#FBF7F0]/70 blur-[100px]" />}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <SectionHeading
           eyebrow="Our Portfolio"
@@ -819,8 +818,10 @@ function About({ content = {} }) {
 
   return (
     <section id="about" className="py-24 md:py-36 bg-[#FBF7F0] relative overflow-hidden">
-      <div className="absolute top-[15%] -left-24 w-80 h-80 rounded-full bg-[#D9A5A0]/15 blur-[100px]" />
-      <div className="absolute bottom-[10%] -right-24 w-96 h-96 rounded-full bg-[#E2BF7E]/18 blur-[120px]" />
+      {!isMobile && <>
+        <div className="absolute top-[15%] -left-24 w-80 h-80 rounded-full bg-[#D9A5A0]/15 blur-[100px]" />
+        <div className="absolute bottom-[10%] -right-24 w-96 h-96 rounded-full bg-[#E2BF7E]/18 blur-[120px]" />
+      </>}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
@@ -876,10 +877,10 @@ function About({ content = {} }) {
               {content.title || 'Crafting Joy,'}{' '}
               <em className="bronze-shimmer font-medium italic">{content.titleItalic || 'One Celebration at a Time'}</em>
             </motion.h2>
-            <motion.p variants={fadeUp} className="font-body text-base md:text-lg text-[#2B2118]/60 leading-relaxed mb-5">
+            <motion.p variants={fadeUp} className="font-body text-[15px] md:text-lg text-[#2B2118]/85 md:text-[#2B2118]/60 leading-relaxed mb-5">
               {content.paragraph1 || 'At Sais Creations Party Rentals & Decor Services, we believe every celebration deserves a beautiful setting. We offer custom event décor and high-quality rental props for weddings, birthdays, baby showers, housewarming ceremonies, festivals, corporate events, and more.'}
             </motion.p>
-            <motion.p variants={fadeUp} className="font-body text-base md:text-lg text-[#2B2118]/60 leading-relaxed mb-10">
+            <motion.p variants={fadeUp} className="font-body text-[15px] md:text-lg text-[#2B2118]/85 md:text-[#2B2118]/60 leading-relaxed mb-10">
               {content.paragraph2 || 'With creative designs, personalized service, and attention to every detail, we help turn your special moments into unforgettable memories. From intimate home celebrations to grand receptions, your vision becomes our canvas — and the joy on your guests\' faces, our greatest reward.'}
             </motion.p>
 
@@ -889,7 +890,7 @@ function About({ content = {} }) {
                   <span className="relative w-7 h-7 rounded-full bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/80 border border-[#B07D3F]/35 flex items-center justify-center shrink-0 mt-0.5 shadow-[0_4px_10px_-4px_rgba(176,125,63,0.4)] group-hover/item:scale-110 group-hover/item:border-[#7B2D43]/45 transition-all duration-300">
                     <Check className="w-3 h-3 text-[#7B2D43]" strokeWidth={2.5} />
                   </span>
-                  <span className="font-body text-[15px] text-[#2B2118]/70 leading-relaxed pt-1">{value}</span>
+                  <span className="font-body text-[15px] text-[#2B2118]/85 md:text-[#2B2118]/70 leading-relaxed pt-1">{value}</span>
                 </li>
               ))}
             </motion.ul>
@@ -943,7 +944,7 @@ function StatCard({ stat, index }) {
         {count}{stat.suffix}
       </div>
       <h3 className="font-accent font-light text-[12px] tracking-[0.35em] uppercase text-[#FBF7F0] mb-3">{stat.label}</h3>
-      <p className="font-body text-[15px] italic text-[#FBF7F0]/50 leading-relaxed">{stat.desc}</p>
+      <p className="font-body text-[15px] italic text-[#FBF7F0]/75 md:text-[#FBF7F0]/50 leading-relaxed">{stat.desc}</p>
     </motion.div>
   )
 }
@@ -958,7 +959,7 @@ function WhyChooseUs() {
   return (
     <section className="py-24 md:py-36 bg-[#3B1F2B] relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(217,165,160,0.12),transparent_60%)]" />
-      <div className="absolute bottom-0 left-1/4 w-[28rem] h-64 rounded-full bg-[#7B2D43]/25 blur-[120px]" />
+      {!isMobile && <div className="absolute bottom-0 left-1/4 w-[28rem] h-64 rounded-full bg-[#7B2D43]/25 blur-[120px]" />}
       <div className="grain grain-strong" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <SectionHeading
@@ -993,7 +994,7 @@ function Testimonials({ items = TESTIMONIALS }) {
 
   return (
     <section className="py-24 md:py-36 bg-[#FBF7F0] relative overflow-hidden">
-      <div className="absolute top-[20%] -right-24 w-80 h-80 rounded-full bg-[#F2D9D2]/40 blur-[110px]" />
+      {!isMobile && <div className="absolute top-[20%] -right-24 w-80 h-80 rounded-full bg-[#F2D9D2]/40 blur-[110px]" />}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Kind Words"
@@ -1105,7 +1106,7 @@ function Contact({ content = {} }) {
   return (
     <section id="contact" className="py-24 md:py-36 bg-[#F3EADC] relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-20 bg-gradient-to-b from-[#B07D3F]/50 to-transparent" />
-      <div className="absolute top-[20%] -left-24 w-80 h-80 rounded-full bg-[#FBF7F0]/80 blur-[100px]" />
+      {!isMobile && <div className="absolute top-[20%] -left-24 w-80 h-80 rounded-full bg-[#FBF7F0]/80 blur-[100px]" />}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <SectionHeading
           eyebrow="Let's Talk"
@@ -1130,7 +1131,7 @@ function Contact({ content = {} }) {
                   </div>
                   <div>
                     <h3 className="font-accent font-medium text-[11px] tracking-[0.3em] uppercase text-[#2B2118] mb-1.5 group-hover:text-[#7B2D43] transition-colors duration-300">{card.label}</h3>
-                    <p className="font-body text-[14px] text-[#2B2118]/55 leading-relaxed">{card.value}</p>
+                    <p className="font-body text-[15px] md:text-[14px] text-[#2B2118]/80 md:text-[#2B2118]/55 leading-relaxed">{card.value}</p>
                   </div>
                 </div>
               )
@@ -1155,7 +1156,7 @@ function Contact({ content = {} }) {
               <span className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[#F2D9D2]/40 blur-[60px] pointer-events-none" />
 
               <h3 className="font-display text-3xl md:text-[34px] font-semibold text-[#2B2118] mb-2">Request a Quote</h3>
-              <p className="font-body italic text-[14px] text-[#2B2118]/45 mb-9">
+              <p className="font-body italic text-[15px] md:text-[14px] text-[#2B2118]/70 md:text-[#2B2118]/45 mb-9">
                 We'll open WhatsApp with your message ready to send
               </p>
 
@@ -1230,8 +1231,10 @@ function CTABanner({ content = {} }) {
           className="relative rounded-[2.5rem] bg-gradient-to-br from-[#46242F] via-[#3B1F2B] to-[#2E1822] px-6 py-20 md:py-24 text-center overflow-hidden shadow-[0_50px_110px_-35px_rgba(46,24,34,0.65),inset_0_1px_0_rgba(217,165,160,0.15)]"
         >
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_30%,rgba(217,165,160,0.16),transparent_70%)]" />
-          <div className="absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-[#7B2D43]/35 blur-[100px]" />
-          <div className="absolute -top-20 -right-12 w-72 h-72 rounded-full bg-[#B07D3F]/15 blur-[90px]" />
+          {!isMobile && <>
+            <div className="absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-[#7B2D43]/35 blur-[100px]" />
+            <div className="absolute -top-20 -right-12 w-72 h-72 rounded-full bg-[#B07D3F]/15 blur-[90px]" />
+          </>}
           <div className="grain grain-strong" />
 
           <div className="relative z-10 max-w-3xl mx-auto">
@@ -1243,7 +1246,7 @@ function CTABanner({ content = {} }) {
               {content.title || 'Your Dream Event,'}{' '}
               <em className="blush-shimmer font-medium italic">{content.titleItalic || 'One Message Away'}</em>
             </h2>
-            <p className="font-body italic text-base md:text-lg text-[#FBF7F0]/55 mb-11 max-w-xl mx-auto">
+            <p className="font-body italic text-[15px] md:text-lg text-[#FBF7F0]/75 md:text-[#FBF7F0]/55 mb-11 max-w-xl mx-auto">
               {content.subtitle || 'Tell us your vision — we\'ll handle the magic. Quick quotes, friendly conversation, no obligations.'}
             </p>
             <a
@@ -1267,7 +1270,7 @@ function Footer({ content = {} }) {
   return (
     <footer className="bg-[#2E1822] relative overflow-hidden rounded-t-[2.5rem] md:rounded-t-[3rem]">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#D9A5A0]/30 to-transparent" />
-      <div className="absolute -top-24 left-1/3 w-96 h-48 rounded-full bg-[#D9A5A0]/[0.07] blur-[80px]" />
+      {!isMobile && <div className="absolute -top-24 left-1/3 w-96 h-48 rounded-full bg-[#D9A5A0]/[0.07] blur-[80px]" />}
       <div className="grain" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-18 md:py-20 pt-16 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10">
@@ -1279,7 +1282,7 @@ function Footer({ content = {} }) {
               </div>
               <span className="font-display text-2xl font-semibold text-[#FBF7F0]">Sais Creation</span>
             </div>
-            <p className="font-body italic text-[15px] text-[#FBF7F0]/45 leading-relaxed mb-7">
+            <p className="font-body italic text-[15px] text-[#FBF7F0]/70 md:text-[#FBF7F0]/45 leading-relaxed mb-7">
               {content.description || 'Crafting unforgettable celebrations with premium decor, bespoke designs & flawless execution.'}
             </p>
             <div className="flex gap-3">

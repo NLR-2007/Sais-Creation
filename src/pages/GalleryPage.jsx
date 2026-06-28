@@ -225,7 +225,7 @@ export default function GalleryPage() {
               Moments We{' '}
               <em className="bronze-shimmer font-medium italic">Created</em>
             </h1>
-            <p className="font-body text-base md:text-lg text-[#2B2118]/55 max-w-2xl mx-auto leading-relaxed italic">
+            <p className="font-body text-[15px] md:text-lg text-[#2B2118]/80 md:text-[#2B2118]/55 max-w-2xl mx-auto leading-relaxed italic">
               A glimpse into the celebrations we've brought to life — each one crafted with love and artistry
             </p>
 
@@ -264,7 +264,7 @@ export default function GalleryPage() {
                 <ImageIcon className="w-8 h-8 text-[#B07D3F]/30" strokeWidth={1} />
               </div>
               <h3 className="font-display text-2xl font-semibold text-[#2B2118]/70 mb-2">Gallery coming soon</h3>
-              <p className="font-body italic text-[#2B2118]/40">Photos of our beautiful work will be added shortly</p>
+              <p className="font-body italic text-[15px] text-[#2B2118]/65 md:text-[#2B2118]/40">Photos of our beautiful work will be added shortly</p>
             </motion.div>
           ) : (
             <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">

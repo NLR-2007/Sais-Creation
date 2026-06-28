@@ -3,7 +3,6 @@
    Soft radii · layered depth · same brand palette
    ═══════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Jost:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
 @import "tailwindcss";
 
 /* ── 1. Palette as CSS variables ─────────────────────────── */
@@ -187,7 +186,20 @@ select.lux-field {
   cursor: pointer;
 }
 
-/* ── 13. Accessibility: reduced motion ───────────────────── */
+/* ── 13. Mobile performance & readability ───────────────── */
+@media (max-width: 767px) {
+  .grain { display: none !important; }
+  .spin-slow { animation: none !important; }
+  .rose-particle { display: none !important; }
+  .pulse-dot::after { animation: none !important; }
+  * { -webkit-tap-highlight-color: transparent; }
+
+  /* Boost thin text to normal weight for mobile readability */
+  .font-light { font-weight: 400 !important; }
+  .font-body  { font-weight: 500 !important; }
+}
+
+/* ── 14. Accessibility: reduced motion ───────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .bronze-shimmer,
   .blush-shimmer,

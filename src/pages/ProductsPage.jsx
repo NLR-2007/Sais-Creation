@@ -5,24 +5,28 @@ import SEO from '../components/SEO'
 import { db } from '../config/firebase'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
-import { useCart } from '../context/CartContext'
 import {
-  Sparkles, Menu, X, Search, Tag, ShoppingCart, ArrowRight, ArrowLeft,
+  Sparkles, Menu, X, Search, Tag, ArrowRight, ArrowLeft,
   Package, Heart, MessageCircle, Send, Filter, LogIn, LogOut, Shield, Gem,
-  ChevronDown, Check, Eye,
+  ChevronDown, Eye,
 } from 'lucide-react'
 
 const WHATSAPP_NUMBER = '14083874854'
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.7, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
-  }),
-}
+const fadeUp = isMobile
+  ? { hidden: { opacity: 0 }, visible: () => ({ opacity: 1, transition: { duration: 0.25 } }) }
+  : {
+      hidden: { opacity: 0, y: 40 },
+      visible: (i = 0) => ({
+        opacity: 1, y: 0,
+        transition: { duration: 0.7, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
+      }),
+    }
 
-const staggerContainer = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }
+const staggerContainer = isMobile
+  ? { hidden: {}, visible: {} }
+  : { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }
 
 function Navbar({ user, isAdmin, onLogout, pageType }) {
   const [scrolled, setScrolled] = useState(false)
@@ -166,67 +170,61 @@ function Navbar({ user, isAdmin, onLogout, pageType }) {
   )
 }
 
-function ProductCard({ product, index, onAddToCart, inCart }) {
+function ProductCard({ product, index }) {
   return (
     <motion.div
       variants={fadeUp} custom={index}
       className="group relative bg-white rounded-[1.75rem] overflow-hidden border border-[#B07D3F]/15 shadow-[0_4px_16px_rgba(59,31,43,0.05)] hover:border-[#7B2D43]/30 transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_36px_80px_-24px_rgba(59,31,43,0.3)]"
     >
-      <div className="relative h-64 bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/50 overflow-hidden">
-        {product.imageUrl ? (
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-            <Package className="w-10 h-10 text-[#B07D3F]/25" strokeWidth={1} />
-            <span className="font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#2B2118]/25">No Image</span>
-          </div>
-        )}
+      <Link to={`/product/${product.id}`} className="block">
+        <div className="relative h-64 bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/50 overflow-hidden">
+          {product.imageUrl ? (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+              <Package className="w-10 h-10 text-[#B07D3F]/25" strokeWidth={1} />
+              <span className="font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#2B2118]/25">No Image</span>
+            </div>
+          )}
 
-        {product.tag && (
-          <span className="absolute top-4 left-4 z-10 font-accent font-medium text-[9px] tracking-[0.3em] uppercase bg-gradient-to-br from-[#8E3650] to-[#6A2438] text-[#FBF7F0] px-4 py-2 rounded-full shadow-[0_8px_20px_-6px_rgba(123,45,67,0.55)]">
-            {product.tag}
-          </span>
-        )}
+          {product.tag && (
+            <span className="absolute top-4 left-4 z-10 font-accent font-medium text-[9px] tracking-[0.3em] uppercase bg-gradient-to-br from-[#8E3650] to-[#6A2438] text-[#FBF7F0] px-4 py-2 rounded-full shadow-[0_8px_20px_-6px_rgba(123,45,67,0.55)]">
+              {product.tag}
+            </span>
+          )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-[#2E1822]/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      </div>
+          {(product.photos?.length > 0) && (
+            <span className="absolute top-4 right-4 z-10 font-accent font-light text-[9px] tracking-[0.2em] uppercase bg-white/90 backdrop-blur-sm text-[#2B2118]/60 px-3 py-1.5 rounded-full border border-[#B07D3F]/15">
+              {(product.photos?.length || 0) + 1} styles
+            </span>
+          )}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-[#2E1822]/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        </div>
+      </Link>
 
       <div className="p-6 pb-7">
         <h3 className="font-display text-xl font-semibold text-[#2B2118] leading-snug mb-2 group-hover:text-[#7B2D43] transition-colors duration-500">
           {product.name}
         </h3>
         {product.desc && (
-          <p className="font-body text-[14px] text-[#2B2118]/50 leading-relaxed line-clamp-2 mb-4">
+          <p className="font-body text-[15px] md:text-[14px] text-[#2B2118]/75 md:text-[#2B2118]/50 leading-relaxed line-clamp-2 mb-4">
             {product.desc}
           </p>
         )}
 
-        <div className="flex gap-2.5">
-          <Link
-            to={`/product/${product.id}`}
-            className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-full font-accent font-light text-[10px] tracking-[0.2em] uppercase border border-[#B07D3F]/25 text-[#7B2D43] bg-white hover:border-[#7B2D43]/40 hover:bg-[#7B2D43]/[0.04] transition-all duration-400"
-          >
-            <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
-            Know More
-          </Link>
-          <button
-            onClick={() => onAddToCart(product)}
-            disabled={inCart}
-            className={`flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-full font-accent font-medium text-[10px] tracking-[0.2em] uppercase transition-all duration-400 ${
-              inCart
-                ? 'bg-green-50 text-green-700 border border-green-200 shadow-none cursor-default'
-                : 'bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] shadow-[0_8px_20px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_12px_28px_-8px_rgba(123,45,67,0.6)] hover:-translate-y-0.5 active:translate-y-0'
-            }`}
-          >
-            {inCart ? <Check className="w-3.5 h-3.5" strokeWidth={2} /> : <ShoppingCart className="w-3.5 h-3.5" strokeWidth={1.6} />}
-            {inCart ? 'Added' : 'Add to Cart'}
-          </button>
-        </div>
+        <Link
+          to={`/product/${product.id}`}
+          className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full font-accent font-medium text-[10px] tracking-[0.2em] uppercase bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] shadow-[0_8px_20px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_12px_28px_-8px_rgba(123,45,67,0.6)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-400"
+        >
+          <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
+          View & Select Style
+        </Link>
       </div>
     </motion.div>
   )
@@ -241,7 +239,6 @@ export default function ProductsPage({ pageType }) {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const { user, isAdmin, logout } = useAuth()
-  const { addToCart, isInCart } = useCart()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -284,10 +281,6 @@ export default function ProductsPage({ pageType }) {
   const handleLogout = async () => {
     await logout()
     navigate('/')
-  }
-
-  const handleAddToCart = (product) => {
-    addToCart(product)
   }
 
   const tags = [...new Set(products.map((p) => p.tag).filter(Boolean))]
@@ -346,7 +339,7 @@ export default function ProductsPage({ pageType }) {
               Browse All{' '}
               <em className="bronze-shimmer font-medium italic">{pageTitle}</em>
             </h1>
-            <p className="font-body text-base md:text-lg text-[#2B2118]/55 max-w-2xl mx-auto leading-relaxed italic">
+            <p className="font-body text-[15px] md:text-lg text-[#2B2118]/80 md:text-[#2B2118]/55 max-w-2xl mx-auto leading-relaxed italic">
               {pageSubtitle}
             </p>
 
@@ -475,7 +468,7 @@ export default function ProductsPage({ pageType }) {
               <h3 className="font-display text-2xl font-semibold text-[#2B2118]/70 mb-2">
                 {searchQuery || selectedTag || selectedCategory ? `No ${pageTitle.toLowerCase()} match your search` : `No ${pageTitle.toLowerCase()} yet`}
               </h3>
-              <p className="font-body italic text-[#2B2118]/40 mb-6">
+              <p className="font-body italic text-[15px] text-[#2B2118]/70 md:text-[#2B2118]/40 mb-6">
                 {searchQuery || selectedTag || selectedCategory
                   ? 'Try adjusting your search or filters'
                   : `${pageTitle} will appear here once they are added`}
@@ -500,8 +493,6 @@ export default function ProductsPage({ pageType }) {
                   key={product.id}
                   product={product}
                   index={i}
-                  onAddToCart={handleAddToCart}
-                  inCart={isInCart(product.id)}
                 />
               ))}
             </motion.div>
@@ -524,7 +515,7 @@ export default function ProductsPage({ pageType }) {
               <h2 className="font-display text-3xl md:text-4xl font-semibold text-[#FBF7F0] leading-[1.1] mb-4">
                 Can't find what you're looking for?
               </h2>
-              <p className="font-body italic text-[#FBF7F0]/50 mb-8 max-w-lg mx-auto">
+              <p className="font-body italic text-[15px] text-[#FBF7F0]/75 md:text-[#FBF7F0]/50 mb-8 max-w-lg mx-auto">
                 We create custom decor for every occasion. Tell us your vision and we'll make it happen.
               </p>
               <a

@@ -16,7 +16,7 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 }
 
-const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '', featured: false, photos: [] }
+const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '', featured: false, photos: [], photoDescriptions: [] }
 
 export default function Products({ sectionType }) {
   const [products, setProducts] = useState([])
@@ -94,7 +94,7 @@ export default function Products({ sectionType }) {
 
   const openEdit = (product) => {
     setEditing(product)
-    setForm({ name: product.name, desc: product.desc, price: product.price, tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '', featured: product.featured || false, photos: product.photos || [] })
+    setForm({ name: product.name, desc: product.desc, price: product.price, tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '', featured: product.featured || false, photos: product.photos || [], photoDescriptions: product.photoDescriptions || [] })
     setImageFile(null)
     setImagePreview(product.imageUrl || '')
     setModalOpen(true)
@@ -128,7 +128,20 @@ export default function Products({ sectionType }) {
   }
 
   const removeGalleryPhoto = (index) => {
-    setForm((prev) => ({ ...prev, photos: prev.photos.filter((_, i) => i !== index) }))
+    setForm((prev) => ({
+      ...prev,
+      photos: prev.photos.filter((_, i) => i !== index),
+      photoDescriptions: (prev.photoDescriptions || []).filter((_, i) => i !== index),
+    }))
+  }
+
+  const updatePhotoDescription = (index, desc) => {
+    setForm((prev) => {
+      const descs = [...(prev.photoDescriptions || [])]
+      while (descs.length <= index) descs.push('')
+      descs[index] = desc
+      return { ...prev, photoDescriptions: descs }
+    })
   }
 
   const handleSave = async (e) => {
@@ -155,6 +168,7 @@ export default function Products({ sectionType }) {
         categoryId: form.categoryId || '',
         featured: form.featured || false,
         photos: form.photos || [],
+        photoDescriptions: form.photoDescriptions || [],
       }
 
       if (editing) {
@@ -483,21 +497,36 @@ export default function Products({ sectionType }) {
 
                 {/* Gallery Photos */}
                 <div>
-                  <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">
-                    Gallery Photos <span className="normal-case tracking-normal text-[#2B2118]/35">(shown in "Know More")</span>
+                  <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-1">
+                    Style Variants <span className="normal-case tracking-normal text-[#2B2118]/35">(each photo becomes a selectable style for customers)</span>
                   </label>
+                  <p className="font-body text-[11px] text-[#2B2118]/35 ml-1 mb-3 italic">
+                    Customers will choose and order individual styles. Add an optional description per photo, or leave blank to use the common description above.
+                  </p>
                   {form.photos.length > 0 && (
-                    <div className="grid grid-cols-4 gap-2 mb-3">
+                    <div className="space-y-3 mb-3">
                       {form.photos.map((url, idx) => (
-                        <div key={idx} className="relative group/photo rounded-xl overflow-hidden aspect-square">
-                          <img src={url} alt="" className="w-full h-full object-contain bg-[#F3EADC]" />
-                          <button
-                            type="button"
-                            onClick={() => removeGalleryPhoto(idx)}
-                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500/90 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity duration-200"
-                          >
-                            <X className="w-3 h-3" strokeWidth={2.5} />
-                          </button>
+                        <div key={idx} className="flex gap-3 items-start bg-[#F3EADC]/30 rounded-xl p-3 border border-[#B07D3F]/10 group/photo">
+                          <div className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0">
+                            <img src={url} alt="" className="w-full h-full object-contain bg-[#F3EADC]" />
+                            <button
+                              type="button"
+                              onClick={() => removeGalleryPhoto(idx)}
+                              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500/90 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity duration-200"
+                            >
+                              <X className="w-2.5 h-2.5" strokeWidth={2.5} />
+                            </button>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-accent font-light text-[9px] tracking-[0.2em] uppercase text-[#B07D3F] mb-1.5">Style {idx + 1} description (optional)</p>
+                            <input
+                              type="text"
+                              value={(form.photoDescriptions || [])[idx] || ''}
+                              onChange={(e) => updatePhotoDescription(idx, e.target.value)}
+                              placeholder="Leave blank to use common description"
+                              className="w-full bg-white border border-[#B07D3F]/15 rounded-lg py-2 px-3 font-body text-[12px] text-[#2B2118] placeholder:text-[#2B2118]/25 outline-none focus:border-[#7B2D43]/40 transition-all duration-300"
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -516,7 +545,7 @@ export default function Products({ sectionType }) {
                   >
                     <ImagePlus className="w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />
                     <span className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#2B2118]/40">
-                      Add Gallery Photos
+                      Add Style Photos
                     </span>
                   </label>
                 </div>

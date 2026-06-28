@@ -12,20 +12,23 @@ import compressImage from '../utils/compressImage'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import {
-  Sparkles, ArrowLeft, ShoppingCart, Check, Star, ChevronLeft, ChevronRight,
+  Sparkles, ArrowLeft, ShoppingCart, Check, Star,
   Send, Camera, X, Menu, LogIn, LogOut, Shield, Package, MessageCircle,
-  Trash2, User, Image as ImageIcon,
+  Trash2, User,
 } from 'lucide-react'
 
 const WHATSAPP_NUMBER = '14083874854'
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.7, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
-  }),
-}
+const fadeUp = isMobile
+  ? { hidden: { opacity: 0 }, visible: () => ({ opacity: 1, transition: { duration: 0.25 } }) }
+  : {
+      hidden: { opacity: 0, y: 30 },
+      visible: (i = 0) => ({
+        opacity: 1, y: 0,
+        transition: { duration: 0.7, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
+      }),
+    }
 
 function Navbar({ user, isAdmin, onLogout }) {
   const [scrolled, setScrolled] = useState(false)
@@ -230,7 +233,7 @@ function ReviewCard({ review, isOwner, onDelete }) {
       </div>
 
       {review.comment && (
-        <p className="font-body text-[14px] text-[#2B2118]/60 leading-relaxed mb-3">
+        <p className="font-body text-[15px] md:text-[14px] text-[#2B2118]/80 md:text-[#2B2118]/60 leading-relaxed mb-3">
           {isLong && !showFullComment ? review.comment.slice(0, 200) + '...' : review.comment}
           {isLong && (
             <button
@@ -292,7 +295,6 @@ export default function ProductDetail() {
 
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [activePhoto, setActivePhoto] = useState(0)
 
   const [reviews, setReviews] = useState([])
   const [reviewsLoading, setReviewsLoading] = useState(true)
@@ -337,7 +339,14 @@ export default function ProductDetail() {
     ? [...(product.imageUrl ? [product.imageUrl] : []), ...(product.photos || [])]
     : []
 
-  const inCart = product ? isInCart(product.id) : false
+  const getPhotoDesc = (photoIndex) => {
+    if (photoIndex === 0 && product?.imageUrl) return product.desc || ''
+    const galleryIdx = product?.imageUrl ? photoIndex - 1 : photoIndex
+    const desc = (product?.photoDescriptions || [])[galleryIdx]
+    return desc || product?.desc || ''
+  }
+
+  const getCartId = (photoIndex) => `${product?.id}_photo_${photoIndex}`
 
   const avgRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)
@@ -474,8 +483,8 @@ export default function ProductDetail() {
         </motion.div>
       </div>
 
-      {/* Product Hero */}
-      <section className="relative overflow-hidden pb-16">
+      {/* Product Info Header */}
+      <section className="relative overflow-hidden pb-8">
         <div className="absolute inset-0">
           <div className="absolute top-0 left-[5%] w-[30rem] h-[30rem] rounded-full bg-[#D9A5A0]/15 blur-[120px]" />
           <div className="absolute bottom-0 right-[5%] w-[26rem] h-[26rem] rounded-full bg-[#E2BF7E]/15 blur-[110px]" />
@@ -483,139 +492,129 @@ export default function ProductDetail() {
         <div className="grain" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="max-w-3xl">
+            <h1 className="font-display text-3xl md:text-4xl lg:text-[44px] font-semibold text-[#2B2118] leading-[1.08] tracking-[-0.01em] mb-5">
+              {product.name}
+            </h1>
 
-            {/* Photo Gallery */}
-            <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="sticky top-28">
-              <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/40 aspect-[4/5] shadow-[0_30px_80px_-20px_rgba(59,31,43,0.22)] border border-white/60">
-                {allPhotos.length > 0 ? (
-                  <>
-                    <AnimatePresence mode="wait">
-                      <motion.img
-                        key={activePhoto}
-                        src={allPhotos[activePhoto]}
-                        alt={product.name}
-                        initial={{ opacity: 0, scale: 1.02 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4 }}
-                        className="w-full h-full object-contain"
-                      />
-                    </AnimatePresence>
-                    {allPhotos.length > 1 && (
-                      <>
-                        <button
-                          onClick={() => setActivePhoto((p) => (p - 1 + allPhotos.length) % allPhotos.length)}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/90 backdrop-blur-md text-[#2B2118]/60 hover:text-[#7B2D43] shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)] hover:scale-105 transition-all duration-300"
-                        >
-                          <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => setActivePhoto((p) => (p + 1) % allPhotos.length)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/90 backdrop-blur-md text-[#2B2118]/60 hover:text-[#7B2D43] shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)] hover:scale-105 transition-all duration-300"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </button>
-                        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 bg-[#2E1822]/40 backdrop-blur-md px-4 py-2 rounded-full">
-                          {allPhotos.map((_, i) => (
-                            <button
-                              key={i}
-                              onClick={() => setActivePhoto(i)}
-                              className={`h-2 rounded-full transition-all duration-400 ${i === activePhoto ? 'bg-white w-7' : 'bg-white/40 w-2 hover:bg-white/70'}`}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                    {product.tag && (
-                      <span className="absolute top-5 left-5 font-accent font-medium text-[9px] tracking-[0.3em] uppercase bg-gradient-to-br from-[#8E3650] to-[#6A2438] text-[#FBF7F0] px-5 py-2.5 rounded-full shadow-[0_8px_24px_-6px_rgba(123,45,67,0.6)]">
-                        {product.tag}
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-                    <Package className="w-16 h-16 text-[#B07D3F]/20" strokeWidth={1} />
-                    <span className="font-accent font-light text-[11px] tracking-[0.3em] uppercase text-[#2B2118]/20">No Image</span>
-                  </div>
-                )}
+            {product.price && (
+              <p className="font-display italic text-2xl md:text-3xl text-[#B07D3F] font-semibold mb-4">{product.price}</p>
+            )}
+
+            {reviews.length > 0 && (
+              <div className="flex items-center gap-3 mb-5 py-3 px-5 bg-white rounded-2xl border border-[#B07D3F]/10 shadow-[0_2px_10px_rgba(59,31,43,0.04)] self-start w-fit">
+                <StarRating rating={Math.round(Number(avgRating))} size="md" />
+                <span className="font-display font-semibold text-[18px] text-[#2B2118]">{avgRating}</span>
+                <span className="w-px h-5 bg-[#B07D3F]/15" />
+                <span className="font-accent font-light text-[13px] md:text-[12px] text-[#2B2118]/70 md:text-[#2B2118]/45">
+                  {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+                </span>
               </div>
+            )}
 
-              {allPhotos.length > 1 && (
-                <div className="flex gap-3 mt-5 overflow-x-auto pb-2 scrollbar-hide">
-                  {allPhotos.map((url, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setActivePhoto(i)}
-                      className={`shrink-0 w-[72px] h-[72px] rounded-2xl overflow-hidden border-2 transition-all duration-300 shadow-[0_4px_12px_rgba(59,31,43,0.06)] ${
-                        i === activePhoto
-                          ? 'border-[#7B2D43] shadow-[0_6px_20px_-4px_rgba(123,45,67,0.35)] scale-105'
-                          : 'border-white/80 opacity-55 hover:opacity-100 hover:border-[#B07D3F]/40'
-                      }`}
-                    >
-                      <img src={url} alt="" className="w-full h-full object-contain bg-[#F3EADC]" loading="lazy" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </motion.div>
+            {product.tag && (
+              <span className="inline-flex font-accent font-medium text-[9px] tracking-[0.3em] uppercase bg-gradient-to-br from-[#8E3650] to-[#6A2438] text-[#FBF7F0] px-5 py-2.5 rounded-full shadow-[0_8px_24px_-6px_rgba(123,45,67,0.6)] mb-5">
+                {product.tag}
+              </span>
+            )}
 
-            {/* Product Info */}
-            <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1} className="flex flex-col pt-2">
-              <h1 className="font-display text-3xl md:text-4xl lg:text-[44px] font-semibold text-[#2B2118] leading-[1.08] tracking-[-0.01em] mb-5">
-                {product.name}
-              </h1>
+            <div className="bg-white rounded-[1.5rem] border border-[#B07D3F]/10 p-6 md:p-7 shadow-[0_4px_16px_rgba(59,31,43,0.04)]">
+              <h3 className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#B07D3F] mb-3">About This Collection</h3>
+              <p className="font-body text-[15px] text-[#2B2118]/80 md:text-[#2B2118]/60 leading-[1.9] whitespace-pre-line">
+                {product.desc || 'No description available for this product.'}
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
-              {product.price && (
-                <p className="font-display italic text-2xl md:text-3xl text-[#B07D3F] font-semibold mb-4">{product.price}</p>
-              )}
-
-              {reviews.length > 0 && (
-                <div className="flex items-center gap-3 mb-5 py-3 px-5 bg-white rounded-2xl border border-[#B07D3F]/10 shadow-[0_2px_10px_rgba(59,31,43,0.04)] self-start">
-                  <StarRating rating={Math.round(Number(avgRating))} size="md" />
-                  <span className="font-display font-semibold text-[18px] text-[#2B2118]">{avgRating}</span>
-                  <span className="w-px h-5 bg-[#B07D3F]/15" />
-                  <span className="font-accent font-light text-[12px] text-[#2B2118]/45">
-                    {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
-                  </span>
-                </div>
-              )}
-
-              <div className="flex items-center gap-4 my-5">
-                <span className="h-px flex-1 bg-gradient-to-r from-[#B07D3F]/30 to-transparent" />
-                <Sparkles className="w-3.5 h-3.5 text-[#B07D3F]/30" strokeWidth={1.2} />
-                <span className="h-px flex-1 bg-gradient-to-l from-[#B07D3F]/30 to-transparent" />
+      {/* Select Your Style — per-photo Add to Cart */}
+      <section className="py-10 md:py-14 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="relative w-10 h-10 flex items-center justify-center">
+                <span className="absolute inset-0 rotate-45 rounded-[9px] border border-[#B07D3F]/25 bg-[#B07D3F]/[0.04]" />
+                <Sparkles className="w-4 h-4 text-[#7B2D43]" strokeWidth={1.5} />
               </div>
-
-              <div className="bg-white rounded-[1.5rem] border border-[#B07D3F]/10 p-6 md:p-7 shadow-[0_4px_16px_rgba(59,31,43,0.04)] mb-8">
-                <h3 className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#B07D3F] mb-3">Description</h3>
-                <p className="font-body text-[15px] text-[#2B2118]/60 leading-[1.9] whitespace-pre-line">
-                  {product.desc || 'No description available for this product.'}
+              <div>
+                <h2 className="font-display text-2xl font-semibold text-[#2B2118]">
+                  {allPhotos.length > 1 ? 'Select Your Style' : 'Product'}
+                </h2>
+                <p className="font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F]">
+                  {allPhotos.length > 1
+                    ? `${allPhotos.length} styles available — add the one you love`
+                    : 'Add this item to your cart'}
                 </p>
               </div>
+            </div>
+          </motion.div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={() => addToCart({ id: product.id, name: product.name, price: product.price || '', imageUrl: product.imageUrl || '' })}
-                  disabled={inCart}
-                  className={`flex-1 inline-flex items-center justify-center gap-2.5 py-4.5 rounded-full font-accent font-medium text-[12px] tracking-[0.25em] uppercase transition-all duration-400 ${
-                    inCart
-                      ? 'bg-green-50 text-green-700 border border-green-200 cursor-default'
-                      : 'bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] shadow-[0_14px_40px_-10px_rgba(123,45,67,0.55),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_20px_50px_-12px_rgba(123,45,67,0.6)] hover:-translate-y-1 active:translate-y-0'
-                  }`}
+          <div className={`grid gap-6 ${allPhotos.length === 1 ? 'grid-cols-1 max-w-md' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
+            {allPhotos.map((photoUrl, i) => {
+              const cartId = getCartId(i)
+              const photoAdded = isInCart(cartId)
+              const desc = getPhotoDesc(i)
+
+              return (
+                <motion.div
+                  key={i}
+                  variants={fadeUp} custom={i}
+                  initial="hidden" animate="visible"
+                  className="group bg-white rounded-[1.75rem] overflow-hidden border border-[#B07D3F]/15 shadow-[0_4px_16px_rgba(59,31,43,0.05)] hover:border-[#7B2D43]/30 hover:shadow-[0_20px_50px_-16px_rgba(59,31,43,0.2)] transition-all duration-500"
                 >
-                  {inCart ? (<><Check className="w-4 h-4" /> Added to Cart</>) : (<><ShoppingCart className="w-4 h-4" strokeWidth={1.6} /> Add to Cart</>)}
-                </button>
-                <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi! I'm interested in "${product.name}". Can you share more details?`)}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex-1 inline-flex items-center justify-center gap-2.5 py-4.5 rounded-full border border-[#B07D3F]/25 bg-white font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:border-[#7B2D43]/40 hover:text-[#7B2D43] hover:bg-[#7B2D43]/[0.03] hover:-translate-y-1 transition-all duration-400 shadow-[0_4px_16px_rgba(59,31,43,0.04)]"
-                >
-                  <MessageCircle className="w-4 h-4" strokeWidth={1.5} />
-                  Enquire on WhatsApp
-                </a>
-              </div>
-            </motion.div>
+                  <div className="relative aspect-[4/5] bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/40 overflow-hidden">
+                    <img
+                      src={photoUrl}
+                      alt={`${product.name} - Style ${i + 1}`}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                      loading="lazy"
+                    />
+                    {allPhotos.length > 1 && (
+                      <span className="absolute top-4 left-4 font-accent font-medium text-[9px] tracking-[0.2em] uppercase bg-white/90 backdrop-blur-sm text-[#2B2118]/70 px-3.5 py-1.5 rounded-full border border-[#B07D3F]/15 shadow-sm">
+                        Style {i + 1}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="p-5 md:p-6">
+                    {desc && (
+                      <p className="font-body text-[14px] md:text-[13px] text-[#2B2118]/75 md:text-[#2B2118]/55 leading-relaxed line-clamp-3 mb-4">
+                        {desc}
+                      </p>
+                    )}
+
+                    <div className="flex flex-col gap-2.5">
+                      <button
+                        onClick={() => addToCart({
+                          id: cartId,
+                          name: allPhotos.length > 1 ? `${product.name} — Style ${i + 1}` : product.name,
+                          imageUrl: photoUrl,
+                          price: product.price || '',
+                          categoryId: product.categoryId || '',
+                        })}
+                        disabled={photoAdded}
+                        className={`w-full inline-flex items-center justify-center gap-2.5 py-3.5 rounded-full font-accent font-medium text-[11px] tracking-[0.2em] uppercase transition-all duration-400 ${
+                          photoAdded
+                            ? 'bg-green-50 text-green-700 border border-green-200 cursor-default'
+                            : 'bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] shadow-[0_10px_28px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_16px_36px_-8px_rgba(123,45,67,0.6)] hover:-translate-y-0.5 active:translate-y-0'
+                        }`}
+                      >
+                        {photoAdded ? (<><Check className="w-4 h-4" strokeWidth={2} /> Added to Cart</>) : (<><ShoppingCart className="w-4 h-4" strokeWidth={1.6} /> Add to Cart</>)}
+                      </button>
+                      <a
+                        href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi! I'm interested in "${product.name}"${allPhotos.length > 1 ? ` (Style ${i + 1})` : ''}. Can you share more details?`)}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full border border-[#B07D3F]/20 bg-white font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#2B2118]/60 hover:border-[#7B2D43]/35 hover:text-[#7B2D43] transition-all duration-300"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        Enquire on WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -714,8 +713,8 @@ export default function ProductDetail() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F3EADC]/80 border border-[#B07D3F]/15 flex items-center justify-center">
                 <Star className="w-6 h-6 text-[#B07D3F]/25" strokeWidth={1} />
               </div>
-              <p className="font-display text-lg text-[#2B2118]/50 mb-1">No reviews yet</p>
-              <p className="font-body italic text-[13px] text-[#2B2118]/35">Be the first to review this product!</p>
+              <p className="font-display text-lg text-[#2B2118]/70 md:text-[#2B2118]/50 mb-1">No reviews yet</p>
+              <p className="font-body italic text-[14px] md:text-[13px] text-[#2B2118]/60 md:text-[#2B2118]/35">Be the first to review this product!</p>
             </div>
           )}
 
@@ -798,7 +797,7 @@ export default function ProductDetail() {
             </div>
           ) : (
             <div className="bg-[#F3EADC]/50 rounded-[1.5rem] border border-[#B07D3F]/10 p-8 text-center">
-              <p className="font-body text-[14px] text-[#2B2118]/50 mb-4">Sign in to write a review</p>
+              <p className="font-body text-[15px] md:text-[14px] text-[#2B2118]/75 md:text-[#2B2118]/50 mb-4">Sign in to write a review</p>
               <Link
                 to="/login"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.2em] uppercase shadow-[0_8px_20px_-8px_rgba(123,45,67,0.5)] hover:shadow-[0_12px_28px_-8px_rgba(123,45,67,0.55)] hover:-translate-y-0.5 transition-all duration-400"
