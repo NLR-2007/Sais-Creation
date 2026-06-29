@@ -9,7 +9,7 @@ import {
   signOut,
   updateProfile,
 } from 'firebase/auth'
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, getDoc, setDoc, addDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 
 const AuthContext = createContext(null)
@@ -90,6 +90,16 @@ export function AuthProvider({ children }) {
       }
       await setDoc(doc(db, 'users', result.user.uid), profile)
       setUserProfile({ uid: result.user.uid, ...profile })
+      await addDoc(collection(db, 'orders'), {
+        customerName: result.user.displayName || '',
+        customerEmail: result.user.email || '',
+        customerPhone: '',
+        customerAddress: '',
+        items: [],
+        status: 'new',
+        sentVia: 'registration',
+        createdAt: serverTimestamp(),
+      })
     }
     return result.user
   }
@@ -109,6 +119,16 @@ export function AuthProvider({ children }) {
     }
     await setDoc(doc(db, 'users', cred.user.uid), profile)
     setUserProfile({ uid: cred.user.uid, ...profile })
+    await addDoc(collection(db, 'orders'), {
+      customerName: name,
+      customerEmail: email || '',
+      customerPhone: `${countryCode}${phone}`,
+      customerAddress: address,
+      items: [],
+      status: 'new',
+      sentVia: 'registration',
+      createdAt: serverTimestamp(),
+    })
     return cred.user
   }
 

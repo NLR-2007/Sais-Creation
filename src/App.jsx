@@ -4,7 +4,6 @@ import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import FloatingWhatsApp from './components/FloatingWhatsApp'
-import FloatingCart from './components/FloatingCart'
 import Home from './pages/Home'
 
 const Login = lazy(() => import('./pages/Login'))
@@ -69,7 +68,6 @@ function App() {
               </Route>
             </Routes>
           </Suspense>
-          <FloatingCart />
           <FloatingWhatsApp />
         </CartProvider>
       </AuthProvider>

@@ -192,11 +192,16 @@ select.lux-field {
   .spin-slow { animation: none !important; }
   .rose-particle { display: none !important; }
   .pulse-dot::after { animation: none !important; }
+  .bronze-shimmer,
+  .blush-shimmer { animation: none !important; }
   * { -webkit-tap-highlight-color: transparent; }
 
   /* Boost thin text to normal weight for mobile readability */
   .font-light { font-weight: 400 !important; }
   .font-body  { font-weight: 500 !important; }
+
+  /* iOS: use dynamic viewport height */
+  .min-h-screen { min-height: 100dvh !important; min-height: -webkit-fill-available !important; }
 }
 
 /* ── 14. Accessibility: reduced motion ───────────────────── */

@@ -5,10 +5,11 @@ import SEO from '../components/SEO'
 import { db } from '../config/firebase'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
+import { useCart } from '../context/CartContext'
 import {
   Sparkles, Menu, X, Search, Tag, ArrowRight, ArrowLeft,
   Package, Heart, MessageCircle, Send, Filter, LogIn, LogOut, Shield, Gem,
-  ChevronDown, Eye,
+  ChevronDown, Eye, ShoppingCart,
 } from 'lucide-react'
 
 const WHATSAPP_NUMBER = '14083874854'
@@ -28,7 +29,7 @@ const staggerContainer = isMobile
   ? { hidden: {}, visible: {} }
   : { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }
 
-function Navbar({ user, isAdmin, onLogout, pageType }) {
+function Navbar({ user, isAdmin, onLogout, pageType, cartCount }) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -46,7 +47,7 @@ function Navbar({ user, isAdmin, onLogout, pageType }) {
     >
       <div className={`mx-auto transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         scrolled
-          ? `max-w-6xl mt-3 mx-3 sm:mx-6 lg:mx-auto ${mobileOpen ? 'rounded-[1.75rem]' : 'rounded-full'} bg-[#FBF7F0]/90 backdrop-blur-xl border border-[#B07D3F]/20 shadow-[0_18px_50px_-12px_rgba(59,31,43,0.18)] px-5 sm:px-7`
+          ? `max-w-6xl mt-3 mx-3 sm:mx-6 lg:mx-auto ${mobileOpen ? 'rounded-[1.75rem]' : 'rounded-full'} bg-[#FBF7F0] md:bg-[#FBF7F0]/90 md:backdrop-blur-xl border border-[#B07D3F]/20 shadow-[0_18px_50px_-12px_rgba(59,31,43,0.18)] px-5 sm:px-7`
           : 'max-w-7xl px-4 sm:px-6 lg:px-8 border border-transparent'
       }`}>
         <div className="flex items-center justify-between py-3 md:py-3.5">
@@ -110,6 +111,16 @@ function Navbar({ user, isAdmin, onLogout, pageType }) {
                 Login
               </Link>
             )}
+            <Link to="/cart" aria-label="View cart"
+              className="relative p-2.5 rounded-full text-[#2B2118]/70 hover:text-[#7B2D43] border border-transparent hover:border-[#B07D3F]/30 hover:bg-white/60 hover:shadow-[0_6px_18px_-6px_rgba(59,31,43,0.2)] transition-all duration-300"
+            >
+              <ShoppingCart className="w-5 h-5" strokeWidth={1.5} />
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-gradient-to-br from-[#8E3650] to-[#6A2438] text-[#FBF7F0] text-[10px] font-accent font-semibold rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(123,45,67,0.5)] ring-2 ring-[#FBF7F0]">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
             <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2.5 rounded-full text-[#2B2118]/75 hover:text-[#7B2D43] hover:bg-white/60 transition-all duration-300">
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -121,7 +132,7 @@ function Navbar({ user, isAdmin, onLogout, pageType }) {
             <motion.div
               initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.35 }}
-              className={`md:hidden overflow-hidden ${scrolled ? '' : 'rounded-[1.75rem] bg-[#FBF7F0]/95 backdrop-blur-xl border border-[#B07D3F]/15 shadow-[0_24px_60px_-16px_rgba(59,31,43,0.25)] mb-3'}`}
+              className={`md:hidden overflow-hidden ${scrolled ? '' : 'rounded-[1.75rem] bg-[#FBF7F0] border border-[#B07D3F]/15 shadow-[0_24px_60px_-16px_rgba(59,31,43,0.25)] mb-3'}`}
             >
               <div className="px-3 py-4 space-y-1">
                 <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
@@ -239,6 +250,7 @@ export default function ProductsPage({ pageType }) {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const { user, isAdmin, logout } = useAuth()
+  const { cartCount } = useCart()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -301,14 +313,14 @@ export default function ProductsPage({ pageType }) {
         description={pageType === 'decors' ? 'Browse our premium event decoration collection: balloon artistry, stage backdrops, floral arrangements, and custom decor for weddings, birthdays, baby showers & corporate events in San Jose, CA.' : pageType === 'rentals' ? 'Rent high-quality party equipment in San Jose: chairs, tables, tents, canopies, lighting, sound systems, and stage setups. Delivery, setup & pickup included.' : 'Explore our complete collection of premium party decorations and rental equipment for events in San Jose, CA and the Bay Area.'}
         path={pageType ? `/${pageType}` : '/products'}
       />
-      <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} pageType={pageType} />
+      <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} pageType={pageType} cartCount={cartCount} />
 
       {/* Hero Banner */}
       <section className="relative pt-32 pb-16 md:pt-40 md:pb-24 overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_35%,rgba(243,234,220,0.9),transparent_75%)]" />
-          <div className="absolute top-[10%] left-[10%] w-80 h-80 rounded-full bg-[#D9A5A0]/20 blur-[100px]" />
-          <div className="absolute bottom-[10%] right-[10%] w-96 h-96 rounded-full bg-[#E2BF7E]/20 blur-[110px]" />
+          <div className="hidden md:block absolute top-[10%] left-[10%] w-80 h-80 rounded-full bg-[#D9A5A0]/20 blur-[100px]" />
+          <div className="hidden md:block absolute bottom-[10%] right-[10%] w-96 h-96 rounded-full bg-[#E2BF7E]/20 blur-[110px]" />
         </div>
         <div className="grain" />
 
@@ -357,7 +369,7 @@ export default function ProductsPage({ pageType }) {
       </section>
 
       {/* Search & Filters */}
-      <section className="sticky top-[72px] z-40 bg-[#FBF7F0]/90 backdrop-blur-xl border-b border-[#B07D3F]/10">
+      <section className="sticky top-[72px] z-40 bg-[#FBF7F0] md:bg-[#FBF7F0]/90 md:backdrop-blur-xl border-b border-[#B07D3F]/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
@@ -436,8 +448,8 @@ export default function ProductsPage({ pageType }) {
 
       {/* Products Grid */}
       <section className="py-12 md:py-16 relative overflow-hidden">
-        <div className="absolute top-[10%] -left-28 w-[26rem] h-[26rem] rounded-full bg-[#F2D9D2]/25 blur-[120px]" />
-        <div className="absolute bottom-[10%] -right-28 w-[26rem] h-[26rem] rounded-full bg-[#E2BF7E]/15 blur-[120px]" />
+        <div className="hidden md:block absolute top-[10%] -left-28 w-[26rem] h-[26rem] rounded-full bg-[#F2D9D2]/25 blur-[120px]" />
+        <div className="hidden md:block absolute bottom-[10%] -right-28 w-[26rem] h-[26rem] rounded-full bg-[#E2BF7E]/15 blur-[120px]" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {loading ? (

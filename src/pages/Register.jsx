@@ -7,13 +7,17 @@ import {
   Phone, ArrowRight, Sparkles, User, Mail, Lock, MapPin, ChevronLeft, Eye, EyeOff, Globe,
 } from 'lucide-react'
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] },
-  }),
-}
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
+const fadeUp = isMobile
+  ? { hidden: { opacity: 0 }, visible: () => ({ opacity: 1, transition: { duration: 0.3 } }) }
+  : {
+      hidden: { opacity: 0, y: 30 },
+      visible: (i = 0) => ({
+        opacity: 1, y: 0,
+        transition: { duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] },
+      }),
+    }
 
 const COUNTRY_CODES = [
   { code: '+91', country: 'India', flag: '🇮🇳' },
@@ -69,6 +73,7 @@ export default function Register() {
     password: '',
     confirmPassword: '',
     countryCode: '+91',
+    countryName: 'India',
     phone: '',
     address: '',
   })
@@ -84,7 +89,7 @@ export default function Register() {
     }
   }, [user, userProfile, isAdmin, navigate])
 
-  const selectedCountry = COUNTRY_CODES.find((c) => c.code === form.countryCode) || COUNTRY_CODES[0]
+  const selectedCountry = COUNTRY_CODES.find((c) => c.code === form.countryCode && c.country === form.countryName) || COUNTRY_CODES[0]
 
   const handleChange = (key, value) => setForm((prev) => ({ ...prev, [key]: value }))
 
@@ -139,9 +144,9 @@ export default function Register() {
       <SEO title="Create Account" description="Create a Sais Creation account to request quotes, track orders, and get personalized party decor recommendations." path="/register" noindex />
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#7B2D43]/[0.06] blur-[120px]" />
-        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#D9A5A0]/[0.08] blur-[120px]" />
-        <div className="absolute top-1/3 right-1/4 w-72 h-72 rounded-full bg-[#B07D3F]/[0.04] blur-[80px]" />
+        <div className="hidden md:block absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#7B2D43]/[0.06] blur-[120px]" />
+        <div className="hidden md:block absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#D9A5A0]/[0.08] blur-[120px]" />
+        <div className="hidden md:block absolute top-1/3 right-1/4 w-72 h-72 rounded-full bg-[#B07D3F]/[0.04] blur-[80px]" />
       </div>
       <div className="grain" />
 
@@ -171,7 +176,7 @@ export default function Register() {
         {/* Card */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible" custom={1}
-          className="relative bg-white/70 backdrop-blur-xl rounded-[2rem] border border-[#B07D3F]/15 shadow-[0_20px_60px_-20px_rgba(59,31,43,0.15),0_4px_16px_rgba(59,31,43,0.05)] p-7 md:p-9 overflow-hidden"
+          className="relative bg-white md:bg-white/70 md:backdrop-blur-xl rounded-[2rem] border border-[#B07D3F]/15 shadow-[0_20px_60px_-20px_rgba(59,31,43,0.15),0_4px_16px_rgba(59,31,43,0.05)] p-7 md:p-9 overflow-hidden"
         >
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B07D3F]/30 to-transparent" />
 
@@ -262,9 +267,9 @@ export default function Register() {
                           <button
                             key={`${c.code}-${c.country}-${i}`}
                             type="button"
-                            onClick={() => { handleChange('countryCode', c.code); setCountryOpen(false) }}
+                            onClick={() => { setForm(prev => ({ ...prev, countryCode: c.code, countryName: c.country })); setCountryOpen(false) }}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-[#F3EADC]/60 transition-colors duration-200 ${
-                              form.countryCode === c.code && c.country === selectedCountry.country ? 'bg-[#7B2D43]/[0.06]' : ''
+                              form.countryCode === c.code && form.countryName === c.country ? 'bg-[#7B2D43]/[0.06]' : ''
                             }`}
                           >
                             <span className="text-base">{c.flag}</span>

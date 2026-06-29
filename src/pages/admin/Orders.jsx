@@ -152,7 +152,7 @@ export default function Orders() {
                     <div className="min-w-0 flex-1">
                       <h3 className="font-display text-base font-semibold text-[#2B2118] truncate">{order.customerName}</h3>
                       <p className="font-accent font-light text-[10px] tracking-[0.15em] text-[#2B2118]/40">
-                        {order.items?.length || 0} items · {formatDate(order.createdAt)}
+                        {order.sentVia === 'registration' ? 'New registration' : `${order.items?.length || 0} items`} · {formatDate(order.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -160,12 +160,14 @@ export default function Orders() {
                   <div className="flex items-center gap-2 sm:gap-3">
                     {order.sentVia && (
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full font-accent font-light text-[8px] tracking-[0.15em] uppercase border ${
-                        order.sentVia === 'email'
+                        order.sentVia === 'registration'
+                          ? 'bg-rose-50 text-rose-600 border-rose-200'
+                          : order.sentVia === 'email'
                           ? 'bg-violet-50 text-violet-600 border-violet-200'
                           : 'bg-emerald-50 text-emerald-600 border-emerald-200'
                       }`}>
-                        {order.sentVia === 'email' ? <Mail className="w-2.5 h-2.5" strokeWidth={1.5} /> : <MessageCircle className="w-2.5 h-2.5" strokeWidth={1.5} />}
-                        {order.sentVia}
+                        {order.sentVia === 'registration' ? <User className="w-2.5 h-2.5" strokeWidth={1.5} /> : order.sentVia === 'email' ? <Mail className="w-2.5 h-2.5" strokeWidth={1.5} /> : <MessageCircle className="w-2.5 h-2.5" strokeWidth={1.5} />}
+                        {order.sentVia === 'registration' ? 'New User' : order.sentVia}
                       </span>
                     )}
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-accent font-light text-[9px] tracking-[0.2em] uppercase border ${sc.color}`}>
@@ -215,8 +217,8 @@ export default function Orders() {
                     {viewOrder.customerAddress && <p className="flex items-start gap-2 font-body text-sm text-[#2B2118]"><MapPin className="w-4 h-4 text-[#B07D3F]/50 shrink-0 mt-0.5" strokeWidth={1.5} />{viewOrder.customerAddress}</p>}
                     {viewOrder.sentVia && (
                       <p className="flex items-center gap-2 font-body text-sm text-[#2B2118]">
-                        {viewOrder.sentVia === 'email' ? <Mail className="w-4 h-4 text-violet-400" strokeWidth={1.5} /> : <MessageCircle className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />}
-                        Sent via <span className="font-semibold capitalize">{viewOrder.sentVia}</span>
+                        {viewOrder.sentVia === 'registration' ? <User className="w-4 h-4 text-rose-400" strokeWidth={1.5} /> : viewOrder.sentVia === 'email' ? <Mail className="w-4 h-4 text-violet-400" strokeWidth={1.5} /> : <MessageCircle className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />}
+                        {viewOrder.sentVia === 'registration' ? <span className="font-semibold">New User Registration</span> : <>Sent via <span className="font-semibold capitalize">{viewOrder.sentVia}</span></>}
                       </p>
                     )}
                   </div>
@@ -242,8 +244,12 @@ export default function Orders() {
 
                 {/* Items */}
                 <div className="space-y-3">
-                  <h4 className="font-accent font-light text-[10px] tracking-[0.4em] uppercase text-[#B07D3F]">Items ({viewOrder.items?.length || 0})</h4>
-                  <div className="space-y-2">
+                  <h4 className="font-accent font-light text-[10px] tracking-[0.4em] uppercase text-[#B07D3F]">
+                    {viewOrder.sentVia === 'registration' ? 'Registration Info' : `Items (${viewOrder.items?.length || 0})`}
+                  </h4>
+                  {viewOrder.sentVia === 'registration' && (!viewOrder.items || viewOrder.items.length === 0) ? (
+                    <p className="font-body text-sm text-[#2B2118]/50 italic">User registered — no items requested yet</p>
+                  ) : <div className="space-y-2">
                     {viewOrder.items?.map((item, i) => (
                       <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[#FBF7F0] border border-[#B07D3F]/10">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/50 overflow-hidden shrink-0">
@@ -259,7 +265,7 @@ export default function Orders() {
                         </div>
                       </div>
                     ))}
-                  </div>
+                  </div>}
                 </div>
 
                 <p className="font-accent font-light text-[10px] tracking-[0.15em] text-[#2B2118]/35">

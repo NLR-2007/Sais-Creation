@@ -30,7 +30,7 @@ const fadeUp = isMobile
       }),
     }
 
-function Navbar({ user, isAdmin, onLogout }) {
+function Navbar({ user, isAdmin, onLogout, cartCount }) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -48,7 +48,7 @@ function Navbar({ user, isAdmin, onLogout }) {
     >
       <div className={`mx-auto transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         scrolled
-          ? `max-w-6xl mt-3 mx-3 sm:mx-6 lg:mx-auto ${mobileOpen ? 'rounded-[1.75rem]' : 'rounded-full'} bg-[#FBF7F0]/90 backdrop-blur-xl border border-[#B07D3F]/20 shadow-[0_18px_50px_-12px_rgba(59,31,43,0.18)] px-5 sm:px-7`
+          ? `max-w-6xl mt-3 mx-3 sm:mx-6 lg:mx-auto ${mobileOpen ? 'rounded-[1.75rem]' : 'rounded-full'} bg-[#FBF7F0] md:bg-[#FBF7F0]/90 md:backdrop-blur-xl border border-[#B07D3F]/20 shadow-[0_18px_50px_-12px_rgba(59,31,43,0.18)] px-5 sm:px-7`
           : 'max-w-7xl px-4 sm:px-6 lg:px-8 border border-transparent'
       }`}>
         <div className="flex items-center justify-between py-3 md:py-3.5">
@@ -110,6 +110,16 @@ function Navbar({ user, isAdmin, onLogout }) {
                 Login
               </Link>
             )}
+            <Link to="/cart" aria-label="View cart"
+              className="relative p-2.5 rounded-full text-[#2B2118]/70 hover:text-[#7B2D43] border border-transparent hover:border-[#B07D3F]/30 hover:bg-white/60 hover:shadow-[0_6px_18px_-6px_rgba(59,31,43,0.2)] transition-all duration-300"
+            >
+              <ShoppingCart className="w-5 h-5" strokeWidth={1.5} />
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-gradient-to-br from-[#8E3650] to-[#6A2438] text-[#FBF7F0] text-[10px] font-accent font-semibold rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(123,45,67,0.5)] ring-2 ring-[#FBF7F0]">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
             <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2.5 rounded-full text-[#2B2118]/75 hover:text-[#7B2D43] hover:bg-white/60 transition-all duration-300">
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -121,7 +131,7 @@ function Navbar({ user, isAdmin, onLogout }) {
             <motion.div
               initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.35 }}
-              className={`md:hidden overflow-hidden ${scrolled ? '' : 'rounded-[1.75rem] bg-[#FBF7F0]/95 backdrop-blur-xl border border-[#B07D3F]/15 shadow-[0_24px_60px_-16px_rgba(59,31,43,0.25)] mb-3'}`}
+              className={`md:hidden overflow-hidden ${scrolled ? '' : 'rounded-[1.75rem] bg-[#FBF7F0] border border-[#B07D3F]/15 shadow-[0_24px_60px_-16px_rgba(59,31,43,0.25)] mb-3'}`}
             >
               <div className="px-3 py-4 space-y-1">
                 <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
@@ -291,7 +301,7 @@ export default function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, userProfile, isAdmin, logout } = useAuth()
-  const { addToCart, isInCart } = useCart()
+  const { addToCart, isInCart, cartCount } = useCart()
 
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -435,7 +445,7 @@ export default function ProductDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FBF7F0]">
-        <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+        <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} cartCount={cartCount} />
         <div className="pt-32 flex items-center justify-center">
           <div className="w-12 h-12 border-2 border-[#B07D3F]/20 border-t-[#7B2D43] rounded-full animate-spin" />
         </div>
@@ -446,7 +456,7 @@ export default function ProductDetail() {
   if (!product) {
     return (
       <div className="min-h-screen bg-[#FBF7F0]">
-        <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+        <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} cartCount={cartCount} />
         <div className="pt-32 text-center px-4">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#F3EADC]/80 border border-[#B07D3F]/15 flex items-center justify-center">
             <Package className="w-8 h-8 text-[#B07D3F]/30" strokeWidth={1} />
@@ -468,7 +478,7 @@ export default function ProductDetail() {
         description={product ? `${product.description || product.name} — available from Sais Creation in San Jose, CA. Custom event decor and rental props.` : 'View product details at Sais Creation.'}
         path={`/product/${id}`}
       />
-      <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+      <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} cartCount={cartCount} />
 
       {/* Back link */}
       <div className="pt-28 pb-4 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -486,8 +496,8 @@ export default function ProductDetail() {
       {/* Product Info Header */}
       <section className="relative overflow-hidden pb-8">
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-[5%] w-[30rem] h-[30rem] rounded-full bg-[#D9A5A0]/15 blur-[120px]" />
-          <div className="absolute bottom-0 right-[5%] w-[26rem] h-[26rem] rounded-full bg-[#E2BF7E]/15 blur-[110px]" />
+          <div className="hidden md:block absolute top-0 left-[5%] w-[30rem] h-[30rem] rounded-full bg-[#D9A5A0]/15 blur-[120px]" />
+          <div className="hidden md:block absolute bottom-0 right-[5%] w-[26rem] h-[26rem] rounded-full bg-[#E2BF7E]/15 blur-[110px]" />
         </div>
         <div className="grain" />
 

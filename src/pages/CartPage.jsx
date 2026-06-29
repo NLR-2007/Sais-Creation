@@ -9,12 +9,16 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.6, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] } }),
-}
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-function Navbar({ user, isAdmin, onLogout }) {
+const fadeUp = isMobile
+  ? { hidden: { opacity: 0 }, visible: () => ({ opacity: 1, transition: { duration: 0.3 } }) }
+  : {
+      hidden: { opacity: 0, y: 30 },
+      visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.6, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] } }),
+    }
+
+function Navbar({ user, isAdmin, onLogout, cartCount }) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -25,8 +29,8 @@ function Navbar({ user, isAdmin, onLogout }) {
   }, [])
 
   return (
-    <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="fixed top-0 left-0 right-0 z-50">
-      <div className={`mx-auto transition-all duration-500 ${scrolled ? `max-w-6xl mt-3 mx-3 sm:mx-6 lg:mx-auto ${mobileOpen ? 'rounded-[1.75rem]' : 'rounded-full'} bg-[#FBF7F0]/90 backdrop-blur-xl border border-[#B07D3F]/20 shadow-[0_18px_50px_-12px_rgba(59,31,43,0.18)] px-5 sm:px-7` : 'max-w-7xl px-4 sm:px-6 lg:px-8 border border-transparent'}`}>
+    <motion.nav initial={isMobile ? false : { y: -100 }} animate={{ y: 0 }} transition={isMobile ? { duration: 0 } : { duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="fixed top-0 left-0 right-0 z-50">
+      <div className={`mx-auto transition-all duration-500 ${scrolled ? `max-w-6xl mt-3 mx-3 sm:mx-6 lg:mx-auto ${mobileOpen ? 'rounded-[1.75rem]' : 'rounded-full'} bg-[#FBF7F0] md:bg-[#FBF7F0]/90 md:backdrop-blur-xl border border-[#B07D3F]/20 shadow-[0_18px_50px_-12px_rgba(59,31,43,0.18)] px-5 sm:px-7` : 'max-w-7xl px-4 sm:px-6 lg:px-8 border border-transparent'}`}>
         <div className="flex items-center justify-between py-3 md:py-3.5">
           <div className="flex items-center gap-3 group">
             <Link to="/" className="relative w-11 h-11 flex items-center justify-center">
@@ -57,6 +61,16 @@ function Navbar({ user, isAdmin, onLogout }) {
             ) : (
               <Link to="/login" className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full font-accent font-light text-[11px] tracking-[0.2em] uppercase text-[#2B2118]/55 hover:text-[#7B2D43] border border-transparent hover:border-[#B07D3F]/25 hover:bg-white/50 transition-all duration-300"><LogIn className="w-4 h-4" strokeWidth={1.5} />Login</Link>
             )}
+            <Link to="/cart" aria-label="View cart"
+              className="relative p-2.5 rounded-full text-[#7B2D43] border border-[#B07D3F]/30 bg-white/60 shadow-[0_6px_18px_-6px_rgba(59,31,43,0.2)] transition-all duration-300"
+            >
+              <ShoppingCart className="w-5 h-5" strokeWidth={1.5} />
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-gradient-to-br from-[#8E3650] to-[#6A2438] text-[#FBF7F0] text-[10px] font-accent font-semibold rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(123,45,67,0.5)] ring-2 ring-[#FBF7F0]">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
             <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2.5 rounded-full text-[#2B2118]/75 hover:text-[#7B2D43] hover:bg-white/60 transition-all duration-300">
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -68,7 +82,7 @@ function Navbar({ user, isAdmin, onLogout }) {
 }
 
 export default function CartPage() {
-  const { cart, removeFromCart, clearCart } = useCart()
+  const { cart, removeFromCart, clearCart, cartCount } = useCart()
   const { user, isAdmin, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -80,7 +94,7 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-[#FBF7F0]">
       <SEO title="Your Cart" description="Review your selected party decor and rental items before requesting a quote from Sais Creation." path="/cart" noindex />
-      <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+      <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} cartCount={cartCount} />
 
       <section className="pt-32 pb-8 md:pt-40 md:pb-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

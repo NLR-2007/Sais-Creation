@@ -20,6 +20,7 @@ export default function Dashboard() {
     products: 0,
     gallery: 0,
     users: 0,
+    orders: 0,
     testimonials: 0,
   })
   const [loading, setLoading] = useState(true)
@@ -27,16 +28,18 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [prodSnap, galSnap, userSnap, testSnap] = await Promise.all([
+        const [prodSnap, galSnap, userSnap, orderSnap, testSnap] = await Promise.all([
           getDocs(collection(db, 'products')),
           getDocs(collection(db, 'gallery')),
           getDocs(collection(db, 'users')),
+          getDocs(collection(db, 'orders')),
           getDocs(collection(db, 'testimonials')),
         ])
         setStats({
           products: prodSnap.size,
           gallery: galSnap.size,
           users: userSnap.size,
+          orders: orderSnap.size,
           testimonials: testSnap.size,
         })
       } catch {
@@ -49,9 +52,9 @@ export default function Dashboard() {
 
   const cards = [
     { label: 'Products', count: stats.products, icon: Package, color: 'from-[#7B2D43] to-[#5C1F31]', link: '/admin/products' },
-    { label: 'Gallery Photos', count: stats.gallery, icon: Image, color: 'from-[#B07D3F] to-[#8C5A2B]', link: '/admin/gallery' },
-    { label: 'Users', count: stats.users, icon: Users, color: 'from-[#D9A5A0] to-[#C28D87]', link: '/admin/users' },
-    { label: 'Testimonials', count: stats.testimonials, icon: FileText, color: 'from-[#3B1F2B] to-[#2E1822]', link: '/admin/content?section=testimonials' },
+    { label: 'Orders', count: stats.orders, icon: ClipboardList, color: 'from-[#B07D3F] to-[#8C5A2B]', link: '/admin/orders' },
+    { label: 'Gallery Photos', count: stats.gallery, icon: Image, color: 'from-[#D9A5A0] to-[#C28D87]', link: '/admin/gallery' },
+    { label: 'Users', count: stats.users, icon: Users, color: 'from-[#3B1F2B] to-[#2E1822]', link: '/admin/users' },
   ]
 
   const quickActions = [

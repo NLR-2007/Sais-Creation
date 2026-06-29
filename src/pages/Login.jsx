@@ -7,12 +7,16 @@ import {
   Phone, ArrowRight, Shield, Sparkles, Gem, Eye, EyeOff, KeyRound, ChevronLeft, Mail, Lock,
 } from 'lucide-react'
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] },
-  }),
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
+const fadeUp = isMobile
+  ? { hidden: { opacity: 0 }, visible: () => ({ opacity: 1, transition: { duration: 0.3 } }) }
+  : {
+      hidden: { opacity: 0, y: 30 },
+      visible: (i = 0) => ({
+        opacity: 1, y: 0,
+        transition: { duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] },
+      }),
 }
 
 function GoogleIcon() {
@@ -151,15 +155,15 @@ export default function Login() {
     return (
       <div className="min-h-screen bg-[#FBF7F0] relative overflow-hidden flex items-center justify-center px-4 py-12">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#D9A5A0]/[0.08] blur-[120px]" />
-          <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#7B2D43]/[0.06] blur-[120px]" />
+          <div className="hidden md:block absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#D9A5A0]/[0.08] blur-[120px]" />
+          <div className="hidden md:block absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#7B2D43]/[0.06] blur-[120px]" />
         </div>
         <div className="grain" />
 
         <div className="relative z-10 w-full max-w-md">
           <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="text-center mb-8">
             <div className="relative w-16 h-16 mx-auto mb-5 flex items-center justify-center">
-              <span className="absolute inset-0 rounded-full border-2 border-dashed border-[#7B2D43]/30 animate-spin" style={{ animationDuration: '20s' }} />
+              <span className="absolute inset-0 rounded-full border-2 border-dashed border-[#7B2D43]/30 md:animate-spin" style={{ animationDuration: '20s' }} />
               <Shield className="w-7 h-7 text-[#7B2D43]" strokeWidth={1.5} />
             </div>
             <h1 className="font-display text-3xl font-semibold text-[#2B2118] mb-2">Admin Verification</h1>
@@ -168,7 +172,7 @@ export default function Login() {
 
           <motion.div
             variants={fadeUp} initial="hidden" animate="visible" custom={1}
-            className="relative bg-white/70 backdrop-blur-xl rounded-[2rem] border border-[#B07D3F]/15 shadow-[0_20px_60px_-20px_rgba(59,31,43,0.15)] p-8 md:p-10 overflow-hidden"
+            className="relative bg-white md:bg-white/70 md:backdrop-blur-xl rounded-[2rem] border border-[#B07D3F]/15 shadow-[0_20px_60px_-20px_rgba(59,31,43,0.15)] p-8 md:p-10 overflow-hidden"
           >
             <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#7B2D43]/30 to-transparent" />
 
@@ -261,9 +265,9 @@ export default function Login() {
     <div className="min-h-screen bg-[#FBF7F0] relative overflow-hidden flex items-center justify-center px-4 py-12">
       <SEO title="Sign In" description="Sign in to your Sais Creation account to manage orders, save favorites, and get personalized party decor quotes." path="/login" noindex />
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#D9A5A0]/[0.08] blur-[120px]" />
-        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#7B2D43]/[0.06] blur-[120px]" />
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-[#B07D3F]/[0.04] blur-[80px]" />
+        <div className="hidden md:block absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#D9A5A0]/[0.08] blur-[120px]" />
+        <div className="hidden md:block absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#7B2D43]/[0.06] blur-[120px]" />
+        <div className="hidden md:block absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-[#B07D3F]/[0.04] blur-[80px]" />
       </div>
       <div className="grain" />
 
@@ -287,7 +291,7 @@ export default function Login() {
 
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible" custom={1}
-          className="relative bg-white/70 backdrop-blur-xl rounded-[2rem] border border-[#B07D3F]/15 shadow-[0_20px_60px_-20px_rgba(59,31,43,0.15),0_4px_16px_rgba(59,31,43,0.05)] p-7 md:p-9 overflow-hidden"
+          className="relative bg-white md:bg-white/70 md:backdrop-blur-xl rounded-[2rem] border border-[#B07D3F]/15 shadow-[0_20px_60px_-20px_rgba(59,31,43,0.15),0_4px_16px_rgba(59,31,43,0.05)] p-7 md:p-9 overflow-hidden"
         >
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#B07D3F]/30 to-transparent" />
 
