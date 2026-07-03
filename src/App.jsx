@@ -3,8 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import ProtectedRoute from './components/ProtectedRoute'
-import FloatingWhatsApp from './components/FloatingWhatsApp'
-import Home from './pages/Home'
+const FloatingWhatsApp = lazy(() => import('./components/FloatingWhatsApp'))
+const Home = lazy(() => import('./pages/Home'))
 
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))

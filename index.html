@@ -49,10 +49,25 @@
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- ═══ Fonts ═══ -->
+    <!-- ═══ Critical CSS (instant first paint) ═══ -->
+    <style>
+      body{margin:0;background:#FBF7F0;font-family:system-ui,-apple-system,sans-serif}
+      #root{min-height:100vh;min-height:100dvh}
+      .app-loader{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:#FBF7F0}
+      .app-loader .spin{width:2rem;height:2rem;border:2px solid rgba(176,125,63,.3);border-top-color:#7B2D43;border-radius:50%;animation:s 1s linear infinite}
+      @keyframes s{to{transform:rotate(360deg)}}
+    </style>
+
+    <!-- ═══ Fonts (non-render-blocking) ═══ -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Jost:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Jost:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Jost:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Jost:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" /></noscript>
+
+    <!-- ═══ Preconnect to Firebase ═══ -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" />
+    <link rel="preconnect" href="https://firebase.googleapis.com" />
 
     <!-- ═══ Structured Data: LocalBusiness ═══ -->
     <script type="application/ld+json">
@@ -325,9 +340,29 @@
         }
       }
     </script>
+    <!-- ═══ Structured Data: ItemList (Service catalog for AI citation) ═══ -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": "Event Decoration & Party Rental Services",
+        "description": "Complete list of decor services and rental items offered by Sais Creation in San Jose, CA",
+        "numberOfItems": 8,
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Balloon Artistry & Arches", "url": "https://saiscreation.com/decors" },
+          { "@type": "ListItem", "position": 2, "name": "Wedding & Stage Decoration", "url": "https://saiscreation.com/decors" },
+          { "@type": "ListItem", "position": 3, "name": "Floral Arrangements", "url": "https://saiscreation.com/decors" },
+          { "@type": "ListItem", "position": 4, "name": "Birthday & Baby Shower Decor", "url": "https://saiscreation.com/decors" },
+          { "@type": "ListItem", "position": 5, "name": "Chair & Table Rentals", "url": "https://saiscreation.com/rentals" },
+          { "@type": "ListItem", "position": 6, "name": "Tent & Canopy Rentals", "url": "https://saiscreation.com/rentals" },
+          { "@type": "ListItem", "position": 7, "name": "Lighting Equipment Rentals", "url": "https://saiscreation.com/rentals" },
+          { "@type": "ListItem", "position": 8, "name": "Sound System Rentals", "url": "https://saiscreation.com/rentals" }
+        ]
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="app-loader"><div class="spin"></div></div></div>
     <noscript>
       <div style="max-width:800px;margin:60px auto;padding:20px;font-family:Georgia,serif;text-align:center;">
         <h1>Sais Creations Decor Service & Party Rentals LLC</h1>
