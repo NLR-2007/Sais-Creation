@@ -556,6 +556,9 @@ export default function ProductsPage({ pageType }) {
               </div>
               <span className="font-display text-xl font-semibold text-[#FBF7F0]">Sais Creation</span>
             </div>
+            <a href={pageType === 'rentals' ? 'https://www.instagram.com/decor_by_saiscreations_rentals' : 'https://www.instagram.com/decor_by_saiscreations_llc'} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-10 h-10 rounded-full border border-[#FBF7F0]/12 hover:border-[#D9A5A0]/70 flex items-center justify-center text-[#FBF7F0]/40 hover:text-[#D9A5A0] transition-all duration-400 hover:bg-[#D9A5A0]/10">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.51"/></svg>
+            </a>
             <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
               &copy; {new Date().getFullYear()} Sais Creation · All rights reserved
             </p>

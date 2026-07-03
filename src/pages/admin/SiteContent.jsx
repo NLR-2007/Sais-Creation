@@ -42,7 +42,8 @@ const SECTIONS = [
   ]},
   { id: 'footer', label: 'Footer', fields: [
     { key: 'description', label: 'Description', type: 'textarea' },
-    { key: 'instagramUrl', label: 'Instagram URL', type: 'text' },
+    { key: 'instagramDecorsUrl', label: 'Instagram Decors URL', type: 'text' },
+    { key: 'instagramRentalsUrl', label: 'Instagram Rentals URL', type: 'text' },
     { key: 'facebookUrl', label: 'Facebook URL', type: 'text' },
   ]},
 ]

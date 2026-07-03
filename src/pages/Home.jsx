@@ -1287,7 +1287,12 @@ function Footer({ content = {} }) {
             </p>
             <div className="flex gap-3">
               {[
-                { href: content.instagramUrl || 'https://instagram.com/saiscreation', label: 'Instagram', icon: (
+                { href: 'https://www.instagram.com/decor_by_saiscreations_llc', label: 'Instagram Decors', icon: (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.51"/>
+                  </svg>
+                )},
+                { href: 'https://www.instagram.com/decor_by_saiscreations_rentals', label: 'Instagram Rentals', icon: (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.51"/>
                   </svg>
