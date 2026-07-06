@@ -202,6 +202,11 @@ export default function CartPage() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.51"/></svg>
               </a>
             </div>
+            <div className="flex items-center gap-4">
+              <Link to="/privacy-policy" className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#FBF7F0]/40 hover:text-[#D9A5A0] transition-colors duration-300">Privacy Policy</Link>
+              <span className="w-1 h-1 rounded-full bg-[#FBF7F0]/15" />
+              <Link to="/terms" className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#FBF7F0]/40 hover:text-[#D9A5A0] transition-colors duration-300">Terms</Link>
+            </div>
             <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">&copy; {new Date().getFullYear()} Sais Creation · All rights reserved</p>
           </div>
         </div>

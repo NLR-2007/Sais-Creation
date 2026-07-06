@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { db } from '../../config/firebase'
 import { collection, getDocs } from 'firebase/firestore'
 import {
-  Package, Image, Users, FileText, TrendingUp, ArrowRight, Sparkles, ClipboardList,
+  Package, Image, Users, TrendingUp, ArrowRight, Sparkles, ClipboardList,
 } from 'lucide-react'
 
 const fadeUp = {
@@ -60,7 +60,6 @@ export default function Dashboard() {
   const quickActions = [
     { label: 'Add New Product', to: '/admin/products', icon: Package },
     { label: 'Upload Gallery Photo', to: '/admin/gallery', icon: Image },
-    { label: 'Edit Home Content', to: '/admin/content', icon: FileText },
     { label: 'Manage Orders', to: '/admin/orders', icon: ClipboardList },
   ]
 

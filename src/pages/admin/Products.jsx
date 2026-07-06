@@ -16,7 +16,7 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 }
 
-const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '', featured: false, photos: [], photoDescriptions: [] }
+const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '', featured: false, photos: [], photoDescriptions: [], photoOrder: [], photoPrices: [] }
 
 export default function Products({ sectionType }) {
   const [products, setProducts] = useState([])
@@ -94,7 +94,7 @@ export default function Products({ sectionType }) {
 
   const openEdit = (product) => {
     setEditing(product)
-    setForm({ name: product.name, desc: product.desc, price: product.price, tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '', featured: product.featured || false, photos: product.photos || [], photoDescriptions: product.photoDescriptions || [] })
+    setForm({ name: product.name, desc: product.desc, price: product.price, tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '', featured: product.featured || false, photos: product.photos || [], photoDescriptions: product.photoDescriptions || [], photoOrder: product.photoOrder || [], photoPrices: product.photoPrices || [] })
     setImageFile(null)
     setImagePreview(product.imageUrl || '')
     setModalOpen(true)
@@ -120,7 +120,12 @@ export default function Products({ sectionType }) {
           return getDownloadURL(storageRef)
         })
       )
-      setForm((prev) => ({ ...prev, photos: [...prev.photos, ...urls] }))
+      setForm((prev) => ({
+        ...prev,
+        photos: [...prev.photos, ...urls],
+        photoOrder: [...(prev.photoOrder || []), ...urls.map(() => 0)],
+        photoPrices: [...(prev.photoPrices || []), ...urls.map(() => '')],
+      }))
     } catch (err) {
       alert('Error uploading photos: ' + err.message)
     }
@@ -132,6 +137,8 @@ export default function Products({ sectionType }) {
       ...prev,
       photos: prev.photos.filter((_, i) => i !== index),
       photoDescriptions: (prev.photoDescriptions || []).filter((_, i) => i !== index),
+      photoOrder: (prev.photoOrder || []).filter((_, i) => i !== index),
+      photoPrices: (prev.photoPrices || []).filter((_, i) => i !== index),
     }))
   }
 
@@ -141,6 +148,24 @@ export default function Products({ sectionType }) {
       while (descs.length <= index) descs.push('')
       descs[index] = desc
       return { ...prev, photoDescriptions: descs }
+    })
+  }
+
+  const updatePhotoPrice = (index, price) => {
+    setForm((prev) => {
+      const prices = [...(prev.photoPrices || [])]
+      while (prices.length <= index) prices.push('')
+      prices[index] = price
+      return { ...prev, photoPrices: prices }
+    })
+  }
+
+  const updatePhotoOrder = (index, order) => {
+    setForm((prev) => {
+      const orders = [...(prev.photoOrder || [])]
+      while (orders.length <= index) orders.push(0)
+      orders[index] = parseInt(order) || 0
+      return { ...prev, photoOrder: orders }
     })
   }
 
@@ -169,6 +194,8 @@ export default function Products({ sectionType }) {
         featured: form.featured || false,
         photos: form.photos || [],
         photoDescriptions: form.photoDescriptions || [],
+        photoOrder: form.photoOrder || [],
+        photoPrices: form.photoPrices || [],
       }
 
       if (editing) {
@@ -518,7 +545,31 @@ export default function Products({ sectionType }) {
                             </button>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-accent font-light text-[9px] tracking-[0.2em] uppercase text-[#B07D3F] mb-1.5">Style {idx + 1} description (optional)</p>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <p className="font-accent font-light text-[9px] tracking-[0.2em] uppercase text-[#B07D3F]">Style {idx + 1} description (optional)</p>
+                              <div className="ml-auto flex items-center gap-3">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-accent font-light text-[9px] tracking-[0.15em] uppercase text-[#B07D3F]/60">Price</span>
+                                  <input
+                                    type="text"
+                                    value={(form.photoPrices || [])[idx] || ''}
+                                    onChange={(e) => updatePhotoPrice(idx, e.target.value)}
+                                    placeholder="—"
+                                    className="w-20 bg-white border border-[#B07D3F]/15 rounded-lg py-1 px-2 font-body text-[12px] text-center text-[#2B2118] placeholder:text-[#2B2118]/20 outline-none focus:border-[#7B2D43]/40 transition-all duration-300"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-accent font-light text-[9px] tracking-[0.15em] uppercase text-[#B07D3F]/60">Order</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={(form.photoOrder || [])[idx] || 0}
+                                    onChange={(e) => updatePhotoOrder(idx, e.target.value)}
+                                    className="w-14 bg-white border border-[#B07D3F]/15 rounded-lg py-1 px-2 font-body text-[12px] text-center text-[#2B2118] outline-none focus:border-[#7B2D43]/40 transition-all duration-300"
+                                  />
+                                </div>
+                              </div>
+                            </div>
                             <input
                               type="text"
                               value={(form.photoDescriptions || [])[idx] || ''}

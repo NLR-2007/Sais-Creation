@@ -345,18 +345,34 @@ export default function ProductDetail() {
     fetchReviews()
   }, [id])
 
-  const allPhotos = product
-    ? [...(product.imageUrl ? [product.imageUrl] : []), ...(product.photos || [])]
-    : []
+  const sortedPhotos = (() => {
+    if (!product) return []
+    const items = []
+    if (product.imageUrl) {
+      items.push({ url: product.imageUrl, desc: product.desc || '', order: 0, origIdx: -1 })
+    }
+    ;(product.photos || []).forEach((url, i) => {
+      const desc = (product.photoDescriptions || [])[i] || product.desc || ''
+      const order = (product.photoOrder || [])[i] || 0
+      const price = (product.photoPrices || [])[i] || ''
+      items.push({ url, desc, order, origIdx: i, price })
+    })
+    items.sort((a, b) => (b.order || 0) - (a.order || 0))
+    return items
+  })()
 
-  const getPhotoDesc = (photoIndex) => {
-    if (photoIndex === 0 && product?.imageUrl) return product.desc || ''
-    const galleryIdx = product?.imageUrl ? photoIndex - 1 : photoIndex
-    const desc = (product?.photoDescriptions || [])[galleryIdx]
-    return desc || product?.desc || ''
+  const allPhotos = sortedPhotos.map((p) => p.url)
+
+  const getPhotoDesc = (photoIndex) => sortedPhotos[photoIndex]?.desc || product?.desc || ''
+
+  const getPhotoPrice = (photoIndex) => sortedPhotos[photoIndex]?.price || product?.price || ''
+
+  const getCartId = (photoIndex) => {
+    const item = sortedPhotos[photoIndex]
+    if (!item) return `${product?.id}_photo_${photoIndex}`
+    if (item.origIdx === -1) return `${product?.id}_photo_0`
+    return `${product?.id}_photo_${item.origIdx + (product?.imageUrl ? 1 : 0)}`
   }
-
-  const getCartId = (photoIndex) => `${product?.id}_photo_${photoIndex}`
 
   const avgRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)
@@ -588,6 +604,9 @@ export default function ProductDetail() {
                   </div>
 
                   <div className="p-5 md:p-6">
+                    {getPhotoPrice(i) && (
+                      <p className="font-display italic text-lg text-[#B07D3F] font-semibold mb-2">{getPhotoPrice(i)}</p>
+                    )}
                     {desc && (
                       <p className="font-body text-[14px] md:text-[13px] text-[#2B2118]/75 md:text-[#2B2118]/55 leading-relaxed line-clamp-3 mb-4">
                         {desc}
@@ -600,7 +619,7 @@ export default function ProductDetail() {
                           id: cartId,
                           name: allPhotos.length > 1 ? `${product.name} — Style ${i + 1}` : product.name,
                           imageUrl: photoUrl,
-                          price: product.price || '',
+                          price: getPhotoPrice(i),
                           categoryId: product.categoryId || '',
                         })}
                         disabled={photoAdded}
@@ -840,6 +859,11 @@ export default function ProductDetail() {
               <a href="https://www.instagram.com/decor_by_saiscreations_rentals" target="_blank" rel="noopener noreferrer" aria-label="Instagram Rentals" className="w-10 h-10 rounded-full border border-[#FBF7F0]/12 hover:border-[#D9A5A0]/70 flex items-center justify-center text-[#FBF7F0]/40 hover:text-[#D9A5A0] transition-all duration-400 hover:bg-[#D9A5A0]/10">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.51"/></svg>
               </a>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link to="/privacy-policy" className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#FBF7F0]/40 hover:text-[#D9A5A0] transition-colors duration-300">Privacy Policy</Link>
+              <span className="w-1 h-1 rounded-full bg-[#FBF7F0]/15" />
+              <Link to="/terms" className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#FBF7F0]/40 hover:text-[#D9A5A0] transition-colors duration-300">Terms</Link>
             </div>
             <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
               &copy; {new Date().getFullYear()} Sais Creation · All rights reserved

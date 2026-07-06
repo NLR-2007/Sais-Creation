@@ -22,6 +22,8 @@ const Users = lazy(() => import('./pages/admin/Users'))
 const Orders = lazy(() => import('./pages/admin/Orders'))
 const SiteContent = lazy(() => import('./pages/admin/SiteContent'))
 const SeedData = lazy(() => import('./pages/SeedData'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'))
 
 function PageLoader() {
   return (
@@ -49,6 +51,8 @@ function App() {
               <Route path="/quote" element={<QuotePage />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/seed" element={<SeedData />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsAndConditions />} />
               <Route
                 path="/admin"
                 element={

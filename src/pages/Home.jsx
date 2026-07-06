@@ -546,7 +546,7 @@ function Hero({ content = {} }) {
           className="mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3"
         >
           {[
-            ['10+ Years of Craft'],
+            ['8+ Years of Experience'],
             ['500+ Events Styled'],
             ['Rated 5★ by Clients'],
           ].map(([label], i) => (
@@ -856,9 +856,9 @@ function About({ content = {} }) {
                 viewport={{ once: true }} transition={{ delay: 0.4, duration: 0.7, type: 'spring', stiffness: 120 }}
                 className="absolute -bottom-8 -right-4 md:-right-10 bg-gradient-to-br from-[#44232F] to-[#2E1822] px-9 py-7 text-center rounded-[1.5rem] shadow-[0_30px_70px_-18px_rgba(46,24,34,0.6),inset_0_1px_0_rgba(217,165,160,0.18)] border border-[#D9A5A0]/15"
               >
-                <span className="font-display text-4xl md:text-5xl font-semibold blush-shimmer block leading-none">10+</span>
+                <span className="font-display text-4xl md:text-5xl font-semibold blush-shimmer block leading-none">8+</span>
                 <span className="font-accent font-light text-[9px] tracking-[0.35em] uppercase text-[#FBF7F0]/70 mt-2.5 block">
-                  Years of Craft
+                  Years of Experience
                 </span>
               </motion.div>
             </div>
@@ -1099,7 +1099,7 @@ function Contact({ content = {} }) {
   const infoCards = [
     { icon: MessageCircle, label: 'WhatsApp Us', value: 'Fastest replies — usually within minutes', href: `https://wa.me/${whatsapp}` },
     { icon: Phone, label: 'Call Us', value: content.phone || '+1 (408) 387-4854', href: `tel:+${whatsapp}` },
-    { icon: Clock, label: 'Working Hours', value: content.hours || 'Mon–Sun · 9 AM – 9 PM', href: null },
+    { icon: Clock, label: 'Working Hours', value: content.hours || 'Mon–Sun · 9 AM – 9 PM PST', href: null },
     { icon: MapPin, label: 'Service Area', value: content.address || 'San Jose, CA & surrounding areas', href: null },
   ]
 
@@ -1352,28 +1352,35 @@ function Footer({ content = {} }) {
               Chat on WhatsApp
             </a>
             <p className="font-body italic text-[13px] text-[#FBF7F0]/30 mt-5">
-              Available Mon–Sun, 9 AM – 9 PM IST
+              Available Mon–Sun, 9 AM – 9 PM PST
             </p>
           </div>
         </div>
 
-        <div className="border-t border-[#FBF7F0]/8 mt-14 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
-            &copy; {new Date().getFullYear()} Sais Creations Decor Service &amp; Party Rentals LLC · All rights reserved
-          </p>
-          <p className="font-body italic text-xs text-[#FBF7F0]/25 flex items-center gap-1.5">
-            Made with <Heart className="w-3 h-3 text-[#D9A5A0] fill-[#D9A5A0]" /> for beautiful celebrations
-          </p>
-          <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
-            Developed by{' '}
-            <a
-              href="https://nlrgroupofcompany.in"
-              target="_blank" rel="noopener noreferrer"
-              className="text-[#D9A5A0]/70 hover:text-[#D9A5A0] underline underline-offset-4 decoration-[#D9A5A0]/30 hover:decoration-[#D9A5A0]/70 transition-colors duration-300"
-            >
-              NLR Group of Companies
-            </a>
-          </p>
+        <div className="border-t border-[#FBF7F0]/8 mt-14 pt-8">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-6">
+            <Link to="/privacy-policy" className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#FBF7F0]/40 hover:text-[#D9A5A0] transition-colors duration-300">Privacy Policy</Link>
+            <span className="w-1 h-1 rounded-full bg-[#FBF7F0]/15" />
+            <Link to="/terms" className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#FBF7F0]/40 hover:text-[#D9A5A0] transition-colors duration-300">Terms &amp; Conditions</Link>
+          </div>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
+              &copy; {new Date().getFullYear()} Sais Creations Decor Service &amp; Party Rentals LLC · All rights reserved
+            </p>
+            <p className="font-body italic text-xs text-[#FBF7F0]/25 flex items-center gap-1.5">
+              Made with <Heart className="w-3 h-3 text-[#D9A5A0] fill-[#D9A5A0]" /> for beautiful celebrations
+            </p>
+            <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
+              Developed by{' '}
+              <a
+                href="https://nlrgroupofcompany.in"
+                target="_blank" rel="noopener noreferrer"
+                className="text-[#D9A5A0]/70 hover:text-[#D9A5A0] underline underline-offset-4 decoration-[#D9A5A0]/30 hover:decoration-[#D9A5A0]/70 transition-colors duration-300"
+              >
+                NLR Group of Companies
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
