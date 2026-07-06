@@ -345,33 +345,53 @@ export default function ProductDetail() {
     fetchReviews()
   }, [id])
 
-  const sortedPhotos = (() => {
+  const sortedStyles = (() => {
     if (!product) return []
     const items = []
-    if (product.imageUrl) {
-      items.push({ url: product.imageUrl, desc: product.desc || '', order: 0, origIdx: -1 })
+    if (product.styles?.length > 0) {
+      product.styles.forEach((s, i) => {
+        if (s.photos?.length > 0) {
+          items.push({
+            photos: s.photos,
+            desc: s.description || product.desc || '',
+            price: s.price || '',
+            order: s.order || 0,
+            origIdx: i,
+          })
+        }
+      })
+    } else {
+      if (product.imageUrl) {
+        items.push({ photos: [product.imageUrl], desc: product.desc || '', order: 0, origIdx: -1, price: '' })
+      }
+      ;(product.photos || []).forEach((url, i) => {
+        const desc = (product.photoDescriptions || [])[i] || product.desc || ''
+        const order = (product.photoOrder || [])[i] || 0
+        const price = (product.photoPrices || [])[i] || ''
+        items.push({ photos: [url], desc, order, origIdx: i, price })
+      })
     }
-    ;(product.photos || []).forEach((url, i) => {
-      const desc = (product.photoDescriptions || [])[i] || product.desc || ''
-      const order = (product.photoOrder || [])[i] || 0
-      const price = (product.photoPrices || [])[i] || ''
-      items.push({ url, desc, order, origIdx: i, price })
-    })
     items.sort((a, b) => (b.order || 0) - (a.order || 0))
     return items
   })()
 
-  const allPhotos = sortedPhotos.map((p) => p.url)
+  const [stylePhotoIndex, setStylePhotoIndex] = useState({})
 
-  const getPhotoDesc = (photoIndex) => sortedPhotos[photoIndex]?.desc || product?.desc || ''
+  const getStylePhotoIdx = (styleIdx) => stylePhotoIndex[styleIdx] || 0
 
-  const getPhotoPrice = (photoIndex) => sortedPhotos[photoIndex]?.price || product?.price || ''
+  const setStylePhotoIdx = (styleIdx, photoIdx) => {
+    setStylePhotoIndex((prev) => ({ ...prev, [styleIdx]: photoIdx }))
+  }
 
-  const getCartId = (photoIndex) => {
-    const item = sortedPhotos[photoIndex]
-    if (!item) return `${product?.id}_photo_${photoIndex}`
-    if (item.origIdx === -1) return `${product?.id}_photo_0`
-    return `${product?.id}_photo_${item.origIdx + (product?.imageUrl ? 1 : 0)}`
+  const getStyleDesc = (styleIdx) => sortedStyles[styleIdx]?.desc || product?.desc || ''
+
+  const getStylePrice = (styleIdx) => sortedStyles[styleIdx]?.price || product?.price || ''
+
+  const getCartId = (styleIdx) => {
+    const item = sortedStyles[styleIdx]
+    if (!item) return `${product?.id}_style_${styleIdx}`
+    if (item.origIdx === -1) return `${product?.id}_style_0`
+    return `${product?.id}_style_${item.origIdx}`
   }
 
   const avgRating = reviews.length > 0
@@ -565,22 +585,25 @@ export default function ProductDetail() {
               </div>
               <div>
                 <h2 className="font-display text-2xl font-semibold text-[#2B2118]">
-                  {allPhotos.length > 1 ? 'Select Your Style' : 'Product'}
+                  {sortedStyles.length > 1 ? 'Select Your Style' : 'Product'}
                 </h2>
                 <p className="font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F]">
-                  {allPhotos.length > 1
-                    ? `${allPhotos.length} styles available — add the one you love`
+                  {sortedStyles.length > 1
+                    ? `${sortedStyles.length} styles available — add the one you love`
                     : 'Add this item to your cart'}
                 </p>
               </div>
             </div>
           </motion.div>
 
-          <div className={`grid gap-6 ${allPhotos.length === 1 ? 'grid-cols-1 max-w-md' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
-            {allPhotos.map((photoUrl, i) => {
+          <div className={`grid gap-6 ${sortedStyles.length === 1 ? 'grid-cols-1 max-w-md' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
+            {sortedStyles.map((style, i) => {
               const cartId = getCartId(i)
-              const photoAdded = isInCart(cartId)
-              const desc = getPhotoDesc(i)
+              const styleAdded = isInCart(cartId)
+              const desc = getStyleDesc(i)
+              const currentPhotoIdx = getStylePhotoIdx(i)
+              const currentPhoto = style.photos[currentPhotoIdx] || style.photos[0]
+              const hasMultiplePhotos = style.photos.length > 1
 
               return (
                 <motion.div
@@ -591,21 +614,67 @@ export default function ProductDetail() {
                 >
                   <div className="relative aspect-[4/5] bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/40 overflow-hidden">
                     <img
-                      src={photoUrl}
+                      src={currentPhoto}
                       alt={`${product.name} - Style ${i + 1}`}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                      className="w-full h-full object-contain transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
                       loading="lazy"
                     />
-                    {allPhotos.length > 1 && (
+                    {sortedStyles.length > 1 && (
                       <span className="absolute top-4 left-4 font-accent font-medium text-[9px] tracking-[0.2em] uppercase bg-white/90 backdrop-blur-sm text-[#2B2118]/70 px-3.5 py-1.5 rounded-full border border-[#B07D3F]/15 shadow-sm">
                         Style {i + 1}
                       </span>
                     )}
+                    {hasMultiplePhotos && (
+                      <>
+                        <button
+                          onClick={() => setStylePhotoIdx(i, (currentPhotoIdx - 1 + style.photos.length) % style.photos.length)}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm border border-[#B07D3F]/15 flex items-center justify-center text-[#2B2118]/60 hover:text-[#7B2D43] hover:bg-white shadow-sm transition-all duration-300"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2} />
+                        </button>
+                        <button
+                          onClick={() => setStylePhotoIdx(i, (currentPhotoIdx + 1) % style.photos.length)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm border border-[#B07D3F]/15 flex items-center justify-center text-[#2B2118]/60 hover:text-[#7B2D43] hover:bg-white shadow-sm transition-all duration-300 rotate-180"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2} />
+                        </button>
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                          {style.photos.map((_, dotIdx) => (
+                            <button
+                              key={dotIdx}
+                              onClick={() => setStylePhotoIdx(i, dotIdx)}
+                              className={`w-2 h-2 rounded-full transition-all duration-300 ${dotIdx === currentPhotoIdx ? 'bg-[#7B2D43] scale-125' : 'bg-white/70 border border-[#2B2118]/15 hover:bg-white'}`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {hasMultiplePhotos && (
+                      <span className="absolute top-4 right-4 font-accent font-light text-[9px] tracking-[0.15em] bg-[#2B2118]/60 backdrop-blur-sm text-white/90 px-2.5 py-1 rounded-full">
+                        {currentPhotoIdx + 1}/{style.photos.length}
+                      </span>
+                    )}
                   </div>
 
+                  {hasMultiplePhotos && (
+                    <div className="px-4 pt-3 overflow-x-auto">
+                      <div className="flex gap-1.5">
+                        {style.photos.map((thumbUrl, tIdx) => (
+                          <button
+                            key={tIdx}
+                            onClick={() => setStylePhotoIdx(i, tIdx)}
+                            className={`w-12 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition-all duration-300 ${tIdx === currentPhotoIdx ? 'border-[#7B2D43] shadow-[0_2px_8px_rgba(123,45,67,0.3)]' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                          >
+                            <img src={thumbUrl} alt="" className="w-full h-full object-contain bg-[#F3EADC]" loading="lazy" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="p-5 md:p-6">
-                    {getPhotoPrice(i) && (
-                      <p className="font-display italic text-lg text-[#B07D3F] font-semibold mb-2">{getPhotoPrice(i)}</p>
+                    {getStylePrice(i) && (
+                      <p className="font-display italic text-lg text-[#B07D3F] font-semibold mb-2">{getStylePrice(i)}</p>
                     )}
                     {desc && (
                       <p className="font-body text-[14px] md:text-[13px] text-[#2B2118]/75 md:text-[#2B2118]/55 leading-relaxed line-clamp-3 mb-4">
@@ -617,22 +686,22 @@ export default function ProductDetail() {
                       <button
                         onClick={() => addToCart({
                           id: cartId,
-                          name: allPhotos.length > 1 ? `${product.name} — Style ${i + 1}` : product.name,
-                          imageUrl: photoUrl,
-                          price: getPhotoPrice(i),
+                          name: sortedStyles.length > 1 ? `${product.name} — Style ${i + 1}` : product.name,
+                          imageUrl: style.photos[0],
+                          price: getStylePrice(i),
                           categoryId: product.categoryId || '',
                         })}
-                        disabled={photoAdded}
+                        disabled={styleAdded}
                         className={`w-full inline-flex items-center justify-center gap-2.5 py-3.5 rounded-full font-accent font-medium text-[11px] tracking-[0.2em] uppercase transition-all duration-400 ${
-                          photoAdded
+                          styleAdded
                             ? 'bg-green-50 text-green-700 border border-green-200 cursor-default'
                             : 'bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] shadow-[0_10px_28px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_16px_36px_-8px_rgba(123,45,67,0.6)] hover:-translate-y-0.5 active:translate-y-0'
                         }`}
                       >
-                        {photoAdded ? (<><Check className="w-4 h-4" strokeWidth={2} /> Added to Cart</>) : (<><ShoppingCart className="w-4 h-4" strokeWidth={1.6} /> Add to Cart</>)}
+                        {styleAdded ? (<><Check className="w-4 h-4" strokeWidth={2} /> Added to Cart</>) : (<><ShoppingCart className="w-4 h-4" strokeWidth={1.6} /> Add to Cart</>)}
                       </button>
                       <a
-                        href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi! I'm interested in "${product.name}"${allPhotos.length > 1 ? ` (Style ${i + 1})` : ''}. Can you share more details?`)}`}
+                        href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi! I'm interested in "${product.name}"${sortedStyles.length > 1 ? ` (Style ${i + 1})` : ''}. Can you share more details?`)}`}
                         target="_blank" rel="noopener noreferrer"
                         className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full border border-[#B07D3F]/20 bg-white font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#2B2118]/60 hover:border-[#7B2D43]/35 hover:text-[#7B2D43] transition-all duration-300"
                       >

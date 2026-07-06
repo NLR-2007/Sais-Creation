@@ -16,7 +16,19 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 }
 
-const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '', featured: false, photos: [], photoDescriptions: [], photoOrder: [], photoPrices: [] }
+const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '', featured: false, styles: [] }
+
+function migrateToStyles(product) {
+  if (product.styles?.length > 0) return product.styles
+  const photos = product.photos || []
+  if (photos.length === 0) return []
+  return photos.map((url, i) => ({
+    photos: [url],
+    description: (product.photoDescriptions || [])[i] || '',
+    price: (product.photoPrices || [])[i] || '',
+    order: (product.photoOrder || [])[i] || 0,
+  }))
+}
 
 export default function Products({ sectionType }) {
   const [products, setProducts] = useState([])
@@ -94,7 +106,8 @@ export default function Products({ sectionType }) {
 
   const openEdit = (product) => {
     setEditing(product)
-    setForm({ name: product.name, desc: product.desc, price: product.price, tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '', featured: product.featured || false, photos: product.photos || [], photoDescriptions: product.photoDescriptions || [], photoOrder: product.photoOrder || [], photoPrices: product.photoPrices || [] })
+    const styles = migrateToStyles(product)
+    setForm({ name: product.name, desc: product.desc, price: product.price, tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '', featured: product.featured || false, styles })
     setImageFile(null)
     setImagePreview(product.imageUrl || '')
     setModalOpen(true)
@@ -107,7 +120,29 @@ export default function Products({ sectionType }) {
     setImagePreview(URL.createObjectURL(file))
   }
 
-  const handleGalleryUpload = async (e) => {
+  const addStyle = () => {
+    setForm((prev) => ({
+      ...prev,
+      styles: [...(prev.styles || []), { photos: [], description: '', price: '', order: 0 }],
+    }))
+  }
+
+  const removeStyle = (styleIdx) => {
+    setForm((prev) => ({
+      ...prev,
+      styles: prev.styles.filter((_, i) => i !== styleIdx),
+    }))
+  }
+
+  const updateStyleField = (styleIdx, field, value) => {
+    setForm((prev) => {
+      const styles = [...prev.styles]
+      styles[styleIdx] = { ...styles[styleIdx], [field]: field === 'order' ? (parseInt(value) || 0) : value }
+      return { ...prev, styles }
+    })
+  }
+
+  const handleStylePhotoUpload = async (styleIdx, e) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
     setSaving(true)
@@ -120,52 +155,22 @@ export default function Products({ sectionType }) {
           return getDownloadURL(storageRef)
         })
       )
-      setForm((prev) => ({
-        ...prev,
-        photos: [...prev.photos, ...urls],
-        photoOrder: [...(prev.photoOrder || []), ...urls.map(() => 0)],
-        photoPrices: [...(prev.photoPrices || []), ...urls.map(() => '')],
-      }))
+      setForm((prev) => {
+        const styles = [...prev.styles]
+        styles[styleIdx] = { ...styles[styleIdx], photos: [...styles[styleIdx].photos, ...urls] }
+        return { ...prev, styles }
+      })
     } catch (err) {
       alert('Error uploading photos: ' + err.message)
     }
     setSaving(false)
   }
 
-  const removeGalleryPhoto = (index) => {
-    setForm((prev) => ({
-      ...prev,
-      photos: prev.photos.filter((_, i) => i !== index),
-      photoDescriptions: (prev.photoDescriptions || []).filter((_, i) => i !== index),
-      photoOrder: (prev.photoOrder || []).filter((_, i) => i !== index),
-      photoPrices: (prev.photoPrices || []).filter((_, i) => i !== index),
-    }))
-  }
-
-  const updatePhotoDescription = (index, desc) => {
+  const removeStylePhoto = (styleIdx, photoIdx) => {
     setForm((prev) => {
-      const descs = [...(prev.photoDescriptions || [])]
-      while (descs.length <= index) descs.push('')
-      descs[index] = desc
-      return { ...prev, photoDescriptions: descs }
-    })
-  }
-
-  const updatePhotoPrice = (index, price) => {
-    setForm((prev) => {
-      const prices = [...(prev.photoPrices || [])]
-      while (prices.length <= index) prices.push('')
-      prices[index] = price
-      return { ...prev, photoPrices: prices }
-    })
-  }
-
-  const updatePhotoOrder = (index, order) => {
-    setForm((prev) => {
-      const orders = [...(prev.photoOrder || [])]
-      while (orders.length <= index) orders.push(0)
-      orders[index] = parseInt(order) || 0
-      return { ...prev, photoOrder: orders }
+      const styles = [...prev.styles]
+      styles[styleIdx] = { ...styles[styleIdx], photos: styles[styleIdx].photos.filter((_, i) => i !== photoIdx) }
+      return { ...prev, styles }
     })
   }
 
@@ -192,10 +197,12 @@ export default function Products({ sectionType }) {
         imageUrl,
         categoryId: form.categoryId || '',
         featured: form.featured || false,
-        photos: form.photos || [],
-        photoDescriptions: form.photoDescriptions || [],
-        photoOrder: form.photoOrder || [],
-        photoPrices: form.photoPrices || [],
+        styles: (form.styles || []).map((s) => ({
+          photos: s.photos || [],
+          description: s.description || '',
+          price: s.price || '',
+          order: s.order || 0,
+        })),
       }
 
       if (editing) {
@@ -522,83 +529,100 @@ export default function Products({ sectionType }) {
                   </label>
                 </div>
 
-                {/* Gallery Photos */}
+                {/* Styles */}
                 <div>
                   <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-1">
-                    Style Variants <span className="normal-case tracking-normal text-[#2B2118]/35">(each photo becomes a selectable style for customers)</span>
+                    Styles <span className="normal-case tracking-normal text-[#2B2118]/35">(group multiple photos per style — customers pick a style)</span>
                   </label>
                   <p className="font-body text-[11px] text-[#2B2118]/35 ml-1 mb-3 italic">
-                    Customers will choose and order individual styles. Add an optional description per photo, or leave blank to use the common description above.
+                    Each style can have multiple photos. Customers will browse photos within a style and add the style to their cart.
                   </p>
-                  {form.photos.length > 0 && (
-                    <div className="space-y-3 mb-3">
-                      {form.photos.map((url, idx) => (
-                        <div key={idx} className="flex gap-3 items-start bg-[#F3EADC]/30 rounded-xl p-3 border border-[#B07D3F]/10 group/photo">
-                          <div className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0">
-                            <img src={url} alt="" className="w-full h-full object-contain bg-[#F3EADC]" />
-                            <button
-                              type="button"
-                              onClick={() => removeGalleryPhoto(idx)}
-                              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500/90 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity duration-200"
-                            >
-                              <X className="w-2.5 h-2.5" strokeWidth={2.5} />
-                            </button>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <p className="font-accent font-light text-[9px] tracking-[0.2em] uppercase text-[#B07D3F]">Style {idx + 1} description (optional)</p>
-                              <div className="ml-auto flex items-center gap-3">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-accent font-light text-[9px] tracking-[0.15em] uppercase text-[#B07D3F]/60">Price</span>
-                                  <input
-                                    type="text"
-                                    value={(form.photoPrices || [])[idx] || ''}
-                                    onChange={(e) => updatePhotoPrice(idx, e.target.value)}
-                                    placeholder="—"
-                                    className="w-20 bg-white border border-[#B07D3F]/15 rounded-lg py-1 px-2 font-body text-[12px] text-center text-[#2B2118] placeholder:text-[#2B2118]/20 outline-none focus:border-[#7B2D43]/40 transition-all duration-300"
-                                  />
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-accent font-light text-[9px] tracking-[0.15em] uppercase text-[#B07D3F]/60">Order</span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={(form.photoOrder || [])[idx] || 0}
-                                    onChange={(e) => updatePhotoOrder(idx, e.target.value)}
-                                    className="w-14 bg-white border border-[#B07D3F]/15 rounded-lg py-1 px-2 font-body text-[12px] text-center text-[#2B2118] outline-none focus:border-[#7B2D43]/40 transition-all duration-300"
-                                  />
-                                </div>
+                  {(form.styles || []).length > 0 && (
+                    <div className="space-y-4 mb-3">
+                      {form.styles.map((style, sIdx) => (
+                        <div key={sIdx} className="bg-[#F3EADC]/30 rounded-xl p-4 border border-[#B07D3F]/10">
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="font-accent font-medium text-[11px] tracking-[0.15em] uppercase text-[#7B2D43]">Style {sIdx + 1}</p>
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-accent font-light text-[9px] tracking-[0.15em] uppercase text-[#B07D3F]/60">Price</span>
+                                <input
+                                  type="text"
+                                  value={style.price || ''}
+                                  onChange={(e) => updateStyleField(sIdx, 'price', e.target.value)}
+                                  placeholder="—"
+                                  className="w-20 bg-white border border-[#B07D3F]/15 rounded-lg py-1 px-2 font-body text-[12px] text-center text-[#2B2118] placeholder:text-[#2B2118]/20 outline-none focus:border-[#7B2D43]/40 transition-all duration-300"
+                                />
                               </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-accent font-light text-[9px] tracking-[0.15em] uppercase text-[#B07D3F]/60">Order</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={style.order || 0}
+                                  onChange={(e) => updateStyleField(sIdx, 'order', e.target.value)}
+                                  className="w-14 bg-white border border-[#B07D3F]/15 rounded-lg py-1 px-2 font-body text-[12px] text-center text-[#2B2118] outline-none focus:border-[#7B2D43]/40 transition-all duration-300"
+                                />
+                              </div>
+                              <button type="button" onClick={() => removeStyle(sIdx)} className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-all duration-200">
+                                <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                              </button>
                             </div>
-                            <input
-                              type="text"
-                              value={(form.photoDescriptions || [])[idx] || ''}
-                              onChange={(e) => updatePhotoDescription(idx, e.target.value)}
-                              placeholder="Leave blank to use common description"
-                              className="w-full bg-white border border-[#B07D3F]/15 rounded-lg py-2 px-3 font-body text-[12px] text-[#2B2118] placeholder:text-[#2B2118]/25 outline-none focus:border-[#7B2D43]/40 transition-all duration-300"
-                            />
                           </div>
+                          <input
+                            type="text"
+                            value={style.description || ''}
+                            onChange={(e) => updateStyleField(sIdx, 'description', e.target.value)}
+                            placeholder="Style description (optional — defaults to common description)"
+                            className="w-full bg-white border border-[#B07D3F]/15 rounded-lg py-2 px-3 font-body text-[12px] text-[#2B2118] placeholder:text-[#2B2118]/25 outline-none focus:border-[#7B2D43]/40 transition-all duration-300 mb-3"
+                          />
+                          {style.photos.length > 0 && (
+                            <div className="flex gap-2 flex-wrap mb-3">
+                              {style.photos.map((url, pIdx) => (
+                                <div key={pIdx} className="relative w-16 h-16 rounded-lg overflow-hidden group/sp">
+                                  <img src={url} alt="" className="w-full h-full object-contain bg-[#F3EADC]" />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeStylePhoto(sIdx, pIdx)}
+                                    className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-red-500/90 text-white flex items-center justify-center opacity-0 group-hover/sp:opacity-100 transition-opacity duration-200"
+                                  >
+                                    <X className="w-2 h-2" strokeWidth={3} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => handleStylePhotoUpload(sIdx, e)}
+                            className="hidden"
+                            id={`style-photos-${sectionType}-${sIdx}`}
+                          />
+                          <label
+                            htmlFor={`style-photos-${sectionType}-${sIdx}`}
+                            className="flex items-center justify-center gap-2 w-full py-2 rounded-lg border-2 border-dashed border-[#B07D3F]/15 hover:border-[#7B2D43]/25 bg-white/50 cursor-pointer transition-colors duration-300"
+                          >
+                            <ImagePlus className="w-3.5 h-3.5 text-[#B07D3F]/40" strokeWidth={1.5} />
+                            <span className="font-accent font-light text-[9px] tracking-[0.15em] uppercase text-[#2B2118]/35">
+                              Add Photos to Style {sIdx + 1}
+                            </span>
+                          </label>
                         </div>
                       ))}
                     </div>
                   )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleGalleryUpload}
-                    className="hidden"
-                    id={`gallery-photos-${sectionType}`}
-                  />
-                  <label
-                    htmlFor={`gallery-photos-${sectionType}`}
+                  <button
+                    type="button"
+                    onClick={addStyle}
                     className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-[#B07D3F]/20 hover:border-[#7B2D43]/30 bg-[#F3EADC]/20 cursor-pointer transition-colors duration-300"
                   >
-                    <ImagePlus className="w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />
+                    <Plus className="w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />
                     <span className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#2B2118]/40">
-                      Add Style Photos
+                      Add New Style
                     </span>
-                  </label>
+                  </button>
                 </div>
               </form>
 
