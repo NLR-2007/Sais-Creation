@@ -102,7 +102,7 @@ To exercise any of these rights, please contact us using the information provide
       title: '12. Contact Us',
       content: `If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us:
 
-• Business Name: Sais Creations Decor Service & Party Rentals LLC
+• Business Name: Sais Creation LLC (Decors and Rentals)
 • Email: saiscreation2018@gmail.com
 • Phone: +1 (408) 387-4854
 • Address: San Jose, California, United States`,
@@ -133,7 +133,7 @@ To exercise any of these rights, please contact us using the information provide
           </motion.p>
 
           <motion.p variants={fadeUp} className="font-body text-[15px] text-[#2B2118]/70 leading-relaxed mb-10">
-            Sais Creations Decor Service & Party Rentals LLC ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our services. Please read this policy carefully. By using our website, you agree to the practices described herein.
+            Sais Creation LLC (Decors and Rentals) ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our services. Please read this policy carefully. By using our website, you agree to the practices described herein.
           </motion.p>
 
           {sections.map((section) => (
