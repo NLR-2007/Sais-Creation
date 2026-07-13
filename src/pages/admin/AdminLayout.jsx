@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import {
   LayoutDashboard, Package, Image, Users, LogOut,
   Menu, X, Sparkles, ChevronLeft, LayoutList, ClipboardList,
-  Flower2, Armchair,
+  Flower2, Armchair, MessageSquare,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { to: '/admin/rentals', icon: Armchair, label: 'Rentals' },
   { to: '/admin/gallery', icon: Image, label: 'Gallery' },
   { to: '/admin/orders', icon: ClipboardList, label: 'Orders' },
+  { to: '/admin/reviews', icon: MessageSquare, label: 'Reviews' },
   { to: '/admin/users', icon: Users, label: 'Users' },
 ]
 

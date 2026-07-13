@@ -126,12 +126,6 @@ const PRODUCTS = [
   { id: 6, name: 'Custom Neon Signature', desc: 'Bespoke neon sign with your words — the perfect photo moment', price: '₹2,999', tag: null },
 ]
 
-const TESTIMONIALS = [
-  { name: 'Priya Sharma', event: 'Wedding Reception', text: 'Sais Creation transformed our reception into a fairy tale. Every detail was impeccable — our guests were mesmerized from the moment they walked in.', rating: 5 },
-  { name: 'Rahul Mehta', event: 'First Birthday', text: 'Beyond magical. The balloon arrangements were stunning, creative, and photographed beautifully. Worth every rupee.', rating: 5 },
-  { name: 'Anita Desai', event: 'Corporate Gala', text: 'Professional, punctual, extraordinarily talented. The stage design was world-class — our leadership team was deeply impressed.', rating: 5 },
-]
-
 const GALLERY_IMAGES = Array.from({ length: 9 }, (_, i) => ({
   id: i + 1,
   height: [300, 380, 330, 350, 310, 400, 320, 360, 300][i],
@@ -546,8 +540,8 @@ function Hero({ content = {} }) {
           className="mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3"
         >
           {[
-            ['8+ Years of Experience'],
-            ['500+ Events Styled'],
+            ['5+ Years of Experience'],
+            ['250+ Events Styled'],
             ['Rated 5★ by Clients'],
           ].map(([label], i) => (
             <span key={label} className="flex items-center gap-8">
@@ -856,7 +850,7 @@ function About({ content = {} }) {
                 viewport={{ once: true }} transition={{ delay: 0.4, duration: 0.7, type: 'spring', stiffness: 120 }}
                 className="absolute -bottom-8 -right-4 md:-right-10 bg-gradient-to-br from-[#44232F] to-[#2E1822] px-9 py-7 text-center rounded-[1.5rem] shadow-[0_30px_70px_-18px_rgba(46,24,34,0.6),inset_0_1px_0_rgba(217,165,160,0.18)] border border-[#D9A5A0]/15"
               >
-                <span className="font-display text-4xl md:text-5xl font-semibold blush-shimmer block leading-none">8+</span>
+                <span className="font-display text-4xl md:text-5xl font-semibold blush-shimmer block leading-none">5+</span>
                 <span className="font-accent font-light text-[9px] tracking-[0.35em] uppercase text-[#FBF7F0]/70 mt-2.5 block">
                   Years of Experience
                 </span>
@@ -951,8 +945,8 @@ function StatCard({ stat, index }) {
 
 function WhyChooseUs() {
   const stats = [
-    { end: 10, suffix: '+', label: 'Years of Craft', desc: 'Designing unforgettable celebrations since 2014' },
-    { end: 500, suffix: '+', label: 'Events Delivered', desc: 'From intimate soirées to grand weddings' },
+    { end: 5, suffix: '+', label: 'Years of Craft', desc: 'Creating unforgettable celebrations with care' },
+    { end: 250, suffix: '+', label: 'Events Styled', desc: 'From intimate soirées to grand weddings' },
     { end: 100, suffix: '%', label: 'Client Delight', desc: 'Every event, a story our clients love retelling' },
   ]
 
@@ -976,7 +970,7 @@ function WhyChooseUs() {
 }
 
 /* ─── TESTIMONIALS ─── */
-function Testimonials({ items = TESTIMONIALS }) {
+function Testimonials({ items = [] }) {
   const [current, setCurrent] = useState(0)
   const timerRef = useRef(null)
 
@@ -1100,7 +1094,7 @@ function Contact({ content = {} }) {
     { icon: MessageCircle, label: 'WhatsApp Us', value: 'Fastest replies — usually within minutes', href: `https://wa.me/${whatsapp}` },
     { icon: Phone, label: 'Call Us', value: content.phone || '+1 (408) 387-4854', href: `tel:+${whatsapp}` },
     { icon: Clock, label: 'Working Hours', value: content.hours || 'Mon–Sun · 9 AM – 9 PM PST', href: null },
-    { icon: MapPin, label: 'Service Area', value: content.address || 'San Jose, CA & surrounding areas', href: null },
+    { icon: MapPin, label: 'Service Area', value: content.address || 'Bay Area, CA & Central Valley, CA surroundings', href: null },
   ]
 
   return (
@@ -1370,16 +1364,6 @@ function Footer({ content = {} }) {
             <p className="font-body italic text-xs text-[#FBF7F0]/25 flex items-center gap-1.5">
               Made with <Heart className="w-3 h-3 text-[#D9A5A0] fill-[#D9A5A0]" /> for beautiful celebrations
             </p>
-            <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
-              Developed by{' '}
-              <a
-                href="https://nlrgroupofcompany.in"
-                target="_blank" rel="noopener noreferrer"
-                className="text-[#D9A5A0]/70 hover:text-[#D9A5A0] underline underline-offset-4 decoration-[#D9A5A0]/30 hover:decoration-[#D9A5A0]/70 transition-colors duration-300"
-              >
-                NLR Group of Companies
-              </a>
-            </p>
           </div>
         </div>
       </div>
@@ -1453,12 +1437,10 @@ export default function Home() {
       <Navbar cartCount={cartCount} user={user} isAdmin={isAdmin} onLogout={handleLogout} />
       <Hero content={siteContent.hero} />
       <MarqueeStrip />
-      <Services />
-      <Products items={featuredProducts || PRODUCTS} />
       <Gallery images={galleryImages || GALLERY_IMAGES} />
       <About content={siteContent.about} />
       <WhyChooseUs />
-      <Testimonials items={dynamicTestimonials || TESTIMONIALS} />
+      {dynamicTestimonials?.length > 0 && <Testimonials items={dynamicTestimonials} />}
       <Contact content={siteContent.contact} />
       <CTABanner content={siteContent.cta} />
       <Footer content={siteContent.footer} />

@@ -401,12 +401,6 @@ export default function GalleryPage() {
             <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
               &copy; {new Date().getFullYear()} Sais Creation · All rights reserved
             </p>
-            <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
-              Developed by{' '}
-              <a href="https://nlrgroupofcompany.in" target="_blank" rel="noopener noreferrer" className="text-[#D9A5A0]/70 hover:text-[#D9A5A0] underline underline-offset-4 decoration-[#D9A5A0]/30 hover:decoration-[#D9A5A0]/70 transition-colors duration-300">
-                NLR Group of Companies
-              </a>
-            </p>
           </div>
         </div>
       </footer>

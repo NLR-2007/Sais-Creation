@@ -21,6 +21,7 @@ const Gallery = lazy(() => import('./pages/admin/Gallery'))
 const Users = lazy(() => import('./pages/admin/Users'))
 const Orders = lazy(() => import('./pages/admin/Orders'))
 const SiteContent = lazy(() => import('./pages/admin/SiteContent'))
+const Reviews = lazy(() => import('./pages/admin/Reviews'))
 const SeedData = lazy(() => import('./pages/SeedData'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'))
@@ -69,6 +70,7 @@ function App() {
                 <Route path="users" element={<Users />} />
                 <Route path="orders" element={<Orders />} />
                 <Route path="content" element={<SiteContent />} />
+                <Route path="reviews" element={<Reviews />} />
               </Route>
             </Routes>
           </Suspense>

@@ -338,7 +338,7 @@ export default function ProductDetail() {
           orderBy('createdAt', 'desc')
         )
         const snap = await getDocs(q)
-        setReviews(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        setReviews(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((review) => review.visible !== false))
       } catch { /* no reviews yet */ }
       setReviewsLoading(false)
     }
@@ -448,6 +448,7 @@ export default function ProductDetail() {
         comment: newComment.trim(),
         photos: uploadedUrls,
         createdAt: serverTimestamp(),
+        visible: true,
       }
 
       const docRef = await addDoc(collection(db, 'reviews'), reviewData)
@@ -936,12 +937,6 @@ export default function ProductDetail() {
             </div>
             <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
               &copy; {new Date().getFullYear()} Sais Creation · All rights reserved
-            </p>
-            <p className="font-accent font-light text-[10px] text-[#FBF7F0]/30 tracking-[0.25em] uppercase">
-              Developed by{' '}
-              <a href="https://nlrgroupofcompany.in" target="_blank" rel="noopener noreferrer" className="text-[#D9A5A0]/70 hover:text-[#D9A5A0] underline underline-offset-4 decoration-[#D9A5A0]/30 hover:decoration-[#D9A5A0]/70 transition-colors duration-300">
-                NLR Group of Companies
-              </a>
             </p>
           </div>
         </div>
