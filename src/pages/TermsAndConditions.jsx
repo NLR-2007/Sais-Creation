@@ -14,13 +14,13 @@ export default function TermsAndConditions() {
   const sections = [
     {
       title: '1. Acceptance of Terms',
-      content: `By accessing or using the Sais Creations website ("Site") or engaging our services, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions, as well as our Privacy Policy. If you do not agree with any part of these terms, you must not use our Site or services.
+      content: `By accessing or using the Sais Creation LLC (Decors and Rentals) website ("Site") or engaging our services, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions, as well as our Privacy Policy. If you do not agree with any part of these terms, you must not use our Site or services.
 
 These terms apply to all visitors, users, customers, and anyone who accesses or uses our Site and services, regardless of their country of residence.`,
     },
     {
       title: '2. Services',
-      content: `Sais Creations Decor Service & Party Rentals LLC provides event decoration services and party rental equipment. Our services include but are not limited to:
+      content: `Sais Creation LLC (Decors and Rentals) provides event decoration services and party rental equipment. Our services include but are not limited to:
 
 • Event and venue decoration design and setup.
 • Party rental equipment and supplies.
@@ -58,18 +58,18 @@ All services are subject to availability and may vary based on location, event r
     },
     {
       title: '7. Intellectual Property and Photo Copyright',
-      content: `All content on this website — including but not limited to photographs, images, text, graphics, logos, icons, designs, layouts, and visual compositions — is the exclusive property of Sais Creations Decor Service & Party Rentals LLC and is protected by United States and international copyright laws, trademark laws, and other intellectual property rights.
+      content: `All content on this website — including but not limited to photographs, images, text, graphics, logos, icons, designs, layouts, and visual compositions — is the exclusive property of Sais Creation LLC (Decors and Rentals) and is protected by United States and international copyright laws, trademark laws, and other intellectual property rights.
 
 IMPORTANT — PHOTO COPYRIGHT NOTICE:
 
-• All photographs and images displayed on this website are original works created by or commissioned by Sais Creations Decor Service & Party Rentals LLC and are protected under the Copyright Act (Title 17, United States Code) and the Berne Convention for the Protection of Literary and Artistic Works.
-• No photograph, image, or visual content from this website may be copied, downloaded, reproduced, republished, distributed, transmitted, displayed, modified, or used in any form or by any means — electronic, mechanical, photocopying, recording, or otherwise — without the prior express written permission of Sais Creations Decor Service & Party Rentals LLC.
+• All photographs and images displayed on this website are original works created by or commissioned by Sais Creation LLC (Decors and Rentals) and are protected under the Copyright Act (Title 17, United States Code) and the Berne Convention for the Protection of Literary and Artistic Works.
+• No photograph, image, or visual content from this website may be copied, downloaded, reproduced, republished, distributed, transmitted, displayed, modified, or used in any form or by any means — electronic, mechanical, photocopying, recording, or otherwise — without the prior express written permission of Sais Creation LLC (Decors and Rentals).
 • Unauthorized use of any photograph or image constitutes copyright infringement and may result in civil and criminal penalties under applicable laws, including but not limited to the Digital Millennium Copyright Act (DMCA).
 • Using our photos on social media, blogs, other websites, marketing materials, or any commercial or personal purpose without authorization is strictly prohibited.
 • If you wish to use any image from this website, you must contact us in advance to obtain a written license. Licensing terms, fees, and permitted uses will be determined on a case-by-case basis.
 • We actively monitor the internet for unauthorized use of our images and will pursue legal action against infringers.
 
-Event Photography: Photographs taken by us at client events may be used by Sais Creations for portfolio, marketing, and promotional purposes unless the client provides written notice to opt out prior to the event.`,
+Event Photography: Photographs taken by us at client events may be used by Sais Creation LLC (Decors and Rentals) for portfolio, marketing, and promotional purposes unless the client provides written notice to opt out prior to the event.`,
     },
     {
       title: '8. Website Use',
@@ -101,7 +101,7 @@ Event Photography: Photographs taken by us at client events may be used by Sais 
     },
     {
       title: '11. Indemnification',
-      content: `You agree to indemnify, defend, and hold harmless Sais Creations Decor Service & Party Rentals LLC, its owners, employees, agents, and affiliates from and against any and all claims, liabilities, damages, losses, costs, and expenses (including reasonable attorney's fees) arising out of or related to:
+      content: `You agree to indemnify, defend, and hold harmless Sais Creation LLC (Decors and Rentals), its owners, employees, agents, and affiliates from and against any and all claims, liabilities, damages, losses, costs, and expenses (including reasonable attorney's fees) arising out of or related to:
 
 • Your use of our Site or services.
 • Your violation of these Terms and Conditions.
@@ -121,7 +121,7 @@ Event Photography: Photographs taken by us at client events may be used by Sais 
     },
     {
       title: '14. Entire Agreement',
-      content: `These Terms and Conditions, together with our Privacy Policy and any specific order agreements, constitute the entire agreement between you and Sais Creations Decor Service & Party Rentals LLC regarding your use of the Site and services, and supersede all prior or contemporaneous communications, whether electronic, oral, or written.`,
+      content: `These Terms and Conditions, together with our Privacy Policy and any specific order agreements, constitute the entire agreement between you and Sais Creation LLC (Decors and Rentals) regarding your use of the Site and services, and supersede all prior or contemporaneous communications, whether electronic, oral, or written.`,
     },
     {
       title: '15. Changes to These Terms',
@@ -131,7 +131,7 @@ Event Photography: Photographs taken by us at client events may be used by Sais 
       title: '16. Contact Us',
       content: `If you have any questions about these Terms and Conditions, please contact us:
 
-• Business Name: Sais Creations Decor Service & Party Rentals LLC
+• Business Name: Sais Creation LLC (Decors and Rentals)
 • Email: saiscreation2018@gmail.com
 • Phone: +1 (408) 387-4854
 • Address: San Jose, California, United States`,
@@ -162,7 +162,7 @@ Event Photography: Photographs taken by us at client events may be used by Sais 
           </motion.p>
 
           <motion.p variants={fadeUp} className="font-body text-[15px] text-[#2B2118]/70 leading-relaxed mb-10">
-            Welcome to Sais Creations Decor Service & Party Rentals LLC. These Terms and Conditions govern your use of our website and services. By accessing our website or engaging our services, you agree to comply with and be bound by the following terms. Please read them carefully.
+            Welcome to Sais Creation LLC (Decors and Rentals). These Terms and Conditions govern your use of our website and services. By accessing our website or engaging our services, you agree to comply with and be bound by the following terms. Please read them carefully.
           </motion.p>
 
           {sections.map((section) => (
