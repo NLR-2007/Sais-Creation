@@ -831,17 +831,8 @@ function About({ content = {} }) {
               <span className="absolute -top-5 -left-5 w-full h-full rounded-t-[12rem] rounded-b-[2rem] border border-[#B07D3F]/35 pointer-events-none" />
               {/* Main visual — grand arch */}
               <div className="relative h-[440px] md:h-[500px] rounded-t-[12rem] rounded-b-[2rem] bg-gradient-to-br from-[#D9A5A0]/40 via-[#F3EADC] to-[#B07D3F]/25 overflow-hidden shadow-[0_40px_90px_-30px_rgba(59,31,43,0.35)]">
+                <img src="/founder-sais-creations.jpeg" alt="Founder of Sais Creations" className="absolute inset-0 w-full h-full object-cover object-top" />
                 <div className="grain" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
-                  <div className="relative w-24 h-24 flex items-center justify-center">
-                    <span className="spin-slow absolute inset-0 rounded-full border border-dashed border-[#7B2D43]/30" />
-                    <span className="absolute inset-3 rounded-full bg-white/50 backdrop-blur-sm border border-[#B07D3F]/30 shadow-[0_10px_30px_-10px_rgba(176,125,63,0.5)]" />
-                    <Crown className="w-8 h-8 text-[#7B2D43]/70 relative z-10" strokeWidth={1.2} />
-                  </div>
-                  <span className="font-accent font-light text-[10px] tracking-[0.4em] uppercase text-[#7B2D43]/50">
-                    Founder / Studio Image
-                  </span>
-                </div>
                 <span className="absolute inset-4 rounded-t-[11rem] rounded-b-[1.6rem] border border-white/60 pointer-events-none" />
               </div>
               {/* Floating experience badge */}
@@ -1384,7 +1375,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchContent() {
       try {
-        const sections = ['hero', 'about', 'contact', 'cta', 'footer']
+        const sections = ['hero', 'about', 'contact', 'footer']
         const data = {}
         await Promise.all(
           sections.map(async (sec) => {
@@ -1442,7 +1433,6 @@ export default function Home() {
       <WhyChooseUs />
       {dynamicTestimonials?.length > 0 && <Testimonials items={dynamicTestimonials} />}
       <Contact content={siteContent.contact} />
-      <CTABanner content={siteContent.cta} />
       <Footer content={siteContent.footer} />
     </div>
   )
