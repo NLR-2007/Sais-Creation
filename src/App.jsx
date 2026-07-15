@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsAndConditions from './pages/TermsAndConditions'
 const FloatingWhatsApp = lazy(() => import('./components/FloatingWhatsApp'))
 const Home = lazy(() => import('./pages/Home'))
 
@@ -23,8 +25,6 @@ const Orders = lazy(() => import('./pages/admin/Orders'))
 const SiteContent = lazy(() => import('./pages/admin/SiteContent'))
 const Reviews = lazy(() => import('./pages/admin/Reviews'))
 const SeedData = lazy(() => import('./pages/SeedData'))
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
-const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'))
 
 function PageLoader() {
   return (

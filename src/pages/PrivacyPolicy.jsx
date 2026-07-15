@@ -84,7 +84,7 @@ To exercise any of these rights, please contact us using the information provide
     },
     {
       title: '8. Children\'s Privacy',
-      content: `Our services are not directed to individuals under the age of 16. We do not knowingly collect personal information from children. If we become aware that we have collected data from a child under 16, we will take steps to delete it promptly. If you believe a child has provided us with personal information, please contact us immediately.`,
+      content: `Our services are not directed to individuals under the age of 18. We do not knowingly collect personal information from children. If we become aware that we have collected data from a child under 18, we will take steps to delete it promptly. If you believe a child has provided us with personal information, please contact us immediately.`,
     },
     {
       title: '9. International Data Transfers',
@@ -103,9 +103,8 @@ To exercise any of these rights, please contact us using the information provide
       content: `If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us:
 
 • Business Name: Sais Creation LLC (Decors and Rentals)
-• Email: saiscreation2018@gmail.com
-• Phone: +1 (408) 387-4854
-• Address: San Jose, California, United States`,
+• Email: saicreations729@gmail.com
+• Phone: +1 (408) 387-4854`,
     },
   ]
 
@@ -129,7 +128,7 @@ To exercise any of these rights, please contact us using the information provide
           </motion.div>
 
           <motion.p variants={fadeUp} className="font-body text-[14px] text-[#2B2118]/50 mb-12">
-            Last Updated: July 6, 2026
+            Last Updated: July 15, 2026
           </motion.p>
 
           <motion.p variants={fadeUp} className="font-body text-[15px] text-[#2B2118]/70 leading-relaxed mb-10">

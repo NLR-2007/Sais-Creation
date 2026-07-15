@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, X } from 'lucide-react'
+import { X } from 'lucide-react'
 
 const WHATSAPP_NUMBER = '14083874854'
 
@@ -20,7 +20,7 @@ export default function FloatingWhatsApp() {
     return () => { clearTimeout(timer); clearTimeout(hide) }
   }, [visible])
 
-  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi Sais Creation! I would like to know more about your decor services.')}`
+  const url = `https://wa.me/${WHATSAPP_NUMBER}`
 
   return (
     <AnimatePresence>
