@@ -1,14 +1,56 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { db } from '../../config/firebase'
+import { db, storage } from '../../config/firebase'
 import { doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, orderBy, query } from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+import compressImage from '../../utils/compressImage'
 import {
-  FileText, Save, Plus, Pencil, Trash2, X, Star, MessageSquare,
+  FileText, Save, Plus, Pencil, Trash2, X, Star, MessageSquare, Upload, Image as ImageIcon,
 } from 'lucide-react'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+}
+
+const DEFAULT_SECTION_DATA = {
+  hero: {
+    title: 'Where Celebrations',
+    titleItalic: 'Become Art',
+    subtitle: 'Custom event decor and high-quality rental props for weddings, birthdays, baby showers, festivals & more - crafted for moments you will never forget.',
+    badge: 'Elegant Traditional Decor, Premium Rental Collections',
+  },
+  about: {
+    eyebrow: 'Our Story',
+    title: 'Crafting Joy,',
+    titleItalic: 'One Celebration at a Time',
+    founderImageUrl: '/founder-sais-creations.jpeg',
+    paragraph1: 'At Sais Creations Party Rentals & Decor Services, we believe every celebration deserves a beautiful setting. We offer custom event decor and high-quality rental props for weddings, birthdays, baby showers, housewarming ceremonies, festivals, corporate events, and more.',
+    paragraph2: "With creative designs, personalized service, and attention to every detail, we help turn your special moments into unforgettable memories. From intimate home celebrations to grand receptions, your vision becomes our canvas - and the joy on your guests' faces, our greatest reward.",
+    founderName: 'The Sais Creation Family',
+    founderTitle: '',
+  },
+  contact: {
+    title: 'Begin Your',
+    titleItalic: 'Celebration',
+    subtitle: "Share a few details and we'll craft a personalised quote - delivered straight to your WhatsApp",
+    whatsappNumber: '14083874854',
+    phone: '+1 (408) 387-4854',
+    address: 'Bay Area, CA & Central Valley, CA surroundings',
+    hours: 'Mon-Sun - 9 AM - 9 PM PST',
+  },
+  cta: {
+    title: 'Your Dream Event,',
+    titleItalic: 'One Message Away',
+    subtitle: "Tell us your vision - we'll handle the magic. Quick quotes, friendly conversation, no obligations.",
+    buttonText: 'Start Planning on WhatsApp',
+  },
+  footer: {
+    description: 'Crafting unforgettable celebrations with premium decor, bespoke designs & flawless execution.',
+    instagramDecorsUrl: 'https://www.instagram.com/decor_by_saiscreations_llc',
+    instagramRentalsUrl: 'https://www.instagram.com/decor_by_saiscreations_rentals',
+    facebookUrl: 'https://facebook.com/saiscreation',
+  },
 }
 
 const SECTIONS = [
@@ -22,6 +64,7 @@ const SECTIONS = [
     { key: 'eyebrow', label: 'Eyebrow Text', type: 'text' },
     { key: 'title', label: 'Title', type: 'text' },
     { key: 'titleItalic', label: 'Title (Italic part)', type: 'text' },
+    { key: 'founderImageUrl', label: 'Founder Photo', type: 'image' },
     { key: 'paragraph1', label: 'Paragraph 1', type: 'textarea' },
     { key: 'paragraph2', label: 'Paragraph 2', type: 'textarea' },
     { key: 'founderName', label: 'Founder Name', type: 'text' },
@@ -29,8 +72,10 @@ const SECTIONS = [
   ]},
   { id: 'contact', label: 'Contact Section', fields: [
     { key: 'title', label: 'Title', type: 'text' },
+    { key: 'titleItalic', label: 'Title (Italic part)', type: 'text' },
     { key: 'subtitle', label: 'Subtitle', type: 'textarea' },
     { key: 'whatsappNumber', label: 'WhatsApp Number', type: 'text' },
+    { key: 'phone', label: 'Phone Number', type: 'text' },
     { key: 'address', label: 'Address', type: 'text' },
     { key: 'hours', label: 'Business Hours', type: 'text' },
   ]},
@@ -54,6 +99,8 @@ export default function SiteContent() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savedMsg, setSavedMsg] = useState('')
+  const [imageUploads, setImageUploads] = useState({})
+  const [removedImages, setRemovedImages] = useState({})
 
   // Testimonials
   const [testimonials, setTestimonials] = useState([])
@@ -69,8 +116,10 @@ export default function SiteContent() {
         const allData = {}
         for (const sec of SECTIONS) {
           const snap = await getDoc(doc(db, 'siteContent', sec.id))
-          if (snap.exists()) allData[sec.id] = snap.data()
-          else allData[sec.id] = {}
+          allData[sec.id] = {
+            ...(DEFAULT_SECTION_DATA[sec.id] || {}),
+            ...(snap.exists() ? snap.data() : {}),
+          }
         }
         setSectionData(allData)
 
@@ -92,13 +141,81 @@ export default function SiteContent() {
     }))
   }
 
+  const handleImageChange = (sectionId, fieldKey, file) => {
+    if (!file) return
+    const uploadKey = `${sectionId}.${fieldKey}`
+    setImageUploads((prev) => {
+      if (prev[uploadKey]?.previewUrl) URL.revokeObjectURL(prev[uploadKey].previewUrl)
+      return {
+        ...prev,
+        [uploadKey]: { file, previewUrl: URL.createObjectURL(file) },
+      }
+    })
+  }
+
+  const handleImageRemove = (sectionId, fieldKey) => {
+    const uploadKey = `${sectionId}.${fieldKey}`
+    const currentUrl = sectionData[sectionId]?.[fieldKey]
+    setImageUploads((prev) => {
+      if (prev[uploadKey]?.previewUrl) URL.revokeObjectURL(prev[uploadKey].previewUrl)
+      const next = { ...prev }
+      delete next[uploadKey]
+      return next
+    })
+    if (currentUrl) {
+      setRemovedImages((prev) => ({ ...prev, [uploadKey]: currentUrl }))
+    }
+    handleFieldChange(sectionId, fieldKey, '')
+  }
+
   const handleSaveSection = async (sectionId) => {
     setSaving(true)
     try {
+      const uploadEntries = Object.entries(imageUploads).filter(([key]) => key.startsWith(`${sectionId}.`))
+      const removedEntries = Object.entries(removedImages).filter(([key]) => key.startsWith(`${sectionId}.`))
+      const nextSectionData = { ...(sectionData[sectionId] || {}) }
+
+      for (const [uploadKey, upload] of uploadEntries) {
+        const fieldKey = uploadKey.split('.')[1]
+        const previousUrl = nextSectionData[fieldKey]
+        const compressed = await compressImage(upload.file)
+        const storageRef = ref(storage, `site-content/${sectionId}/${Date.now()}_${compressed.name}`)
+        await uploadBytes(storageRef, compressed)
+        nextSectionData[fieldKey] = await getDownloadURL(storageRef)
+
+        if (previousUrl) {
+          try {
+            await deleteObject(ref(storage, previousUrl))
+          } catch { /* old image may be a bundled/public file or already deleted */ }
+        }
+      }
+
+      for (const [, imageUrl] of removedEntries) {
+        try {
+          await deleteObject(ref(storage, imageUrl))
+        } catch { /* old image may be a bundled/public file or already deleted */ }
+      }
+
       await setDoc(doc(db, 'siteContent', sectionId), {
-        ...sectionData[sectionId],
+        ...nextSectionData,
         updatedAt: serverTimestamp(),
       }, { merge: true })
+      setSectionData((prev) => ({ ...prev, [sectionId]: nextSectionData }))
+      setImageUploads((prev) => {
+        const next = { ...prev }
+        uploadEntries.forEach(([uploadKey, upload]) => {
+          if (upload.previewUrl) URL.revokeObjectURL(upload.previewUrl)
+          delete next[uploadKey]
+        })
+        return next
+      })
+      setRemovedImages((prev) => {
+        const next = { ...prev }
+        removedEntries.forEach(([uploadKey]) => {
+          delete next[uploadKey]
+        })
+        return next
+      })
       setSavedMsg(sectionId)
       setTimeout(() => setSavedMsg(''), 2000)
     } catch (err) {
@@ -292,7 +409,53 @@ export default function SiteContent() {
                     <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">
                       {field.label}
                     </label>
-                    {field.type === 'textarea' ? (
+                    {field.type === 'image' ? (
+                      <div className="space-y-3">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageChange(activeSection, field.key, e.target.files?.[0])}
+                          className="hidden"
+                          id={`${activeSection}-${field.key}`}
+                        />
+                        <label
+                          htmlFor={`${activeSection}-${field.key}`}
+                          className="flex items-center justify-center w-full h-72 rounded-[1.25rem] border-2 border-dashed border-[#B07D3F]/20 hover:border-[#7B2D43]/30 bg-[#F3EADC]/30 cursor-pointer transition-colors duration-300 overflow-hidden"
+                        >
+                          {imageUploads[`${activeSection}.${field.key}`]?.previewUrl || sectionData[activeSection]?.[field.key] ? (
+                            <img
+                              src={imageUploads[`${activeSection}.${field.key}`]?.previewUrl || sectionData[activeSection]?.[field.key]}
+                              alt={`${field.label} preview`}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <div className="text-center px-6">
+                              <ImageIcon className="w-9 h-9 text-[#B07D3F]/30 mx-auto mb-3" strokeWidth={1.5} />
+                              <p className="font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#2B2118]/35">Click to upload photo</p>
+                            </div>
+                          )}
+                        </label>
+                        <div className="flex flex-wrap gap-3">
+                          <label
+                            htmlFor={`${activeSection}-${field.key}`}
+                            className="inline-flex items-center gap-2 rounded-full border border-[#B07D3F]/30 bg-white/60 text-[#7B2D43] font-accent font-light text-[11px] tracking-[0.15em] uppercase px-5 py-3 cursor-pointer hover:border-[#7B2D43]/50 hover:bg-[#7B2D43]/[0.04] transition-all duration-300"
+                          >
+                            <Upload className="w-4 h-4" strokeWidth={1.5} />
+                            {sectionData[activeSection]?.[field.key] || imageUploads[`${activeSection}.${field.key}`] ? 'Change Photo' : 'Add Photo'}
+                          </label>
+                          {(sectionData[activeSection]?.[field.key] || imageUploads[`${activeSection}.${field.key}`]) && (
+                            <button
+                              type="button"
+                              onClick={() => handleImageRemove(activeSection, field.key)}
+                              className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 text-red-500 font-accent font-light text-[11px] tracking-[0.15em] uppercase px-5 py-3 hover:bg-red-100 transition-all duration-300"
+                            >
+                              <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                              Remove Photo
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : field.type === 'textarea' ? (
                       <textarea
                         value={sectionData[activeSection]?.[field.key] || ''}
                         onChange={(e) => handleFieldChange(activeSection, field.key, e.target.value)}

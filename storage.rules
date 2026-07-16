@@ -22,5 +22,12 @@ service firebase.storage {
       allow write: if request.auth != null &&
         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
+
+    // Editable site content images
+    match /site-content/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
   }
 }

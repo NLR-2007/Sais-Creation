@@ -803,6 +803,9 @@ function Gallery({ images = GALLERY_IMAGES }) {
 
 /* ─── ABOUT ─── */
 function About({ content = {} }) {
+  const founderImageUrl = Object.prototype.hasOwnProperty.call(content, 'founderImageUrl')
+    ? content.founderImageUrl
+    : '/founder-sais-creations.jpeg'
   const values = [
     'Bespoke designs tailored to every story',
     'Premium materials & meticulous detailing',
@@ -831,7 +834,9 @@ function About({ content = {} }) {
               <span className="absolute -top-5 -left-5 w-full h-full rounded-t-[12rem] rounded-b-[2rem] border border-[#B07D3F]/35 pointer-events-none" />
               {/* Main visual — grand arch */}
               <div className="relative h-[440px] md:h-[500px] rounded-t-[12rem] rounded-b-[2rem] bg-gradient-to-br from-[#D9A5A0]/40 via-[#F3EADC] to-[#B07D3F]/25 overflow-hidden shadow-[0_40px_90px_-30px_rgba(59,31,43,0.35)]">
-                <img src="/founder-sais-creations.jpeg" alt="Founder of Sais Creations" className="absolute inset-0 w-full h-full object-cover object-top" />
+                {founderImageUrl && (
+                  <img src={founderImageUrl} alt="Founder of Sais Creations" className="absolute inset-0 w-full h-full object-cover object-top" />
+                )}
                 <div className="grain" />
                 <span className="absolute inset-4 rounded-t-[11rem] rounded-b-[1.6rem] border border-white/60 pointer-events-none" />
               </div>
@@ -1272,12 +1277,12 @@ function Footer({ content = {} }) {
             </p>
             <div className="flex gap-3">
               {[
-                { href: 'https://www.instagram.com/decor_by_saiscreations_llc', label: 'Instagram Decors', icon: (
+                { href: content.instagramDecorsUrl || 'https://www.instagram.com/decor_by_saiscreations_llc', label: 'Instagram Decors', icon: (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.51"/>
                   </svg>
                 )},
-                { href: 'https://www.instagram.com/decor_by_saiscreations_rentals', label: 'Instagram Rentals', icon: (
+                { href: content.instagramRentalsUrl || 'https://www.instagram.com/decor_by_saiscreations_rentals', label: 'Instagram Rentals', icon: (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.51"/>
                   </svg>
@@ -1375,7 +1380,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchContent() {
       try {
-        const sections = ['hero', 'about', 'contact', 'footer']
+        const sections = ['hero', 'about', 'contact', 'cta', 'footer']
         const data = {}
         await Promise.all(
           sections.map(async (sec) => {
@@ -1433,6 +1438,7 @@ export default function Home() {
       <WhyChooseUs />
       {dynamicTestimonials?.length > 0 && <Testimonials items={dynamicTestimonials} />}
       <Contact content={siteContent.contact} />
+      <CTABanner content={siteContent.cta} />
       <Footer content={siteContent.footer} />
     </div>
   )

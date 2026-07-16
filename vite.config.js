@@ -3,7 +3,14 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
+  // Keep Vite's generated dependency files away from node_modules, which can
+  // be held open by Windows scanners and cause EPERM errors during re-bundling.
+  cacheDir: '.vite-cache',
   plugins: [tailwindcss(), react()],
+  server: {
+    // Firebase authorizes localhost for local OAuth, but not 127.0.0.1 by default.
+    host: 'localhost',
+  },
   build: {
     rollupOptions: {
       output: {
