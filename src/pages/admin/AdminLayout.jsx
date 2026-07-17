@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { to: '/admin/rentals', icon: Armchair, label: 'Rentals' },
   { to: '/admin/gallery', icon: Image, label: 'Gallery' },
   { to: '/admin/orders', icon: ClipboardList, label: 'Orders' },
+  { to: '/admin/request-quote', icon: ClipboardList, label: 'Request Quote' },
   { to: '/admin/reviews', icon: MessageSquare, label: 'Reviews' },
   { to: '/admin/users', icon: Users, label: 'Users' },
 ]

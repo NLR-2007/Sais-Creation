@@ -19,6 +19,28 @@ const STATUS_CONFIG = {
   completed: { label: 'Completed', color: 'bg-[#F3EADC] text-[#B07D3F] border-[#B07D3F]/20', icon: Archive },
 }
 
+function parsePriceAmount(value) {
+  const match = String(value || '').match(/\d[\d,]*(?:\.\d+)?/)
+  const amount = match ? Number(match[0].replace(/,/g, '')) : 0
+  return Number.isFinite(amount) ? amount : 0
+}
+
+function getAdminTotal(items = []) {
+  return items.reduce((sum, item) => sum + parsePriceAmount(item.adminPrice), 0)
+}
+
+function formatAdminPrice(value) {
+  const text = String(value || '').trim()
+  if (!text) return ''
+  if (/^\$/.test(text)) return text
+  if (/^\d[\d,]*(?:\.\d+)?(?:\b|\/)/.test(text)) return `$${text}`
+  return text
+}
+
+function getOrderAdminTotal(order) {
+  return Number(order?.adminTotal) || getAdminTotal(order?.items || [])
+}
+
 export default function Orders() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -261,10 +283,17 @@ export default function Orders() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-display text-sm font-semibold text-[#2B2118] truncate">{item.name}</p>
-                          {item.price && <p className="font-display italic text-xs text-[#B07D3F]">{item.price}</p>}
+                          {item.adminPrice && <p className="font-display italic text-xs text-[#B07D3F]">Admin price: {formatAdminPrice(item.adminPrice)}</p>}
+                          {!item.adminPrice && item.price && <p className="font-display italic text-xs text-[#B07D3F]">User price: {item.price}</p>}
                         </div>
                       </div>
                     ))}
+                    {getOrderAdminTotal(viewOrder) > 0 && (
+                      <div className="flex items-center justify-between rounded-xl bg-[#7B2D43]/[0.06] border border-[#7B2D43]/10 px-4 py-3">
+                        <span className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#7B2D43]">Admin Total</span>
+                        <span className="font-display text-lg font-semibold text-[#7B2D43]">${getOrderAdminTotal(viewOrder).toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>}
                 </div>
 

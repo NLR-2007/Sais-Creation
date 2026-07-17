@@ -2,10 +2,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-export default defineConfig({
-  // Keep Vite's generated dependency files away from node_modules, which can
-  // be held open by Windows scanners and cause EPERM errors during re-bundling.
-  cacheDir: '.vite-cache',
+export default defineConfig(({ command }) => ({
+  // Use a fresh cache per dev/build process so Windows never has to unlink a
+  // dependency prebundle that an old Node process still has locked.
+  cacheDir: command === 'serve' ? `.vite-cache-dev/${process.pid}` : '.vite-cache-build',
   plugins: [tailwindcss(), react()],
   server: {
     // Firebase authorizes localhost for local OAuth, but not 127.0.0.1 by default.
@@ -24,4 +24,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

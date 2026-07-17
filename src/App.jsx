@@ -24,6 +24,7 @@ const Users = lazy(() => import('./pages/admin/Users'))
 const Orders = lazy(() => import('./pages/admin/Orders'))
 const SiteContent = lazy(() => import('./pages/admin/SiteContent'))
 const Reviews = lazy(() => import('./pages/admin/Reviews'))
+const RequestQuote = lazy(() => import('./pages/admin/RequestQuote'))
 const SeedData = lazy(() => import('./pages/SeedData'))
 
 function PageLoader() {
@@ -69,6 +70,7 @@ function App() {
                 <Route path="gallery" element={<Gallery />} />
                 <Route path="users" element={<Users />} />
                 <Route path="orders" element={<Orders />} />
+                <Route path="request-quote" element={<RequestQuote />} />
                 <Route path="content" element={<SiteContent />} />
                 <Route path="reviews" element={<Reviews />} />
               </Route>

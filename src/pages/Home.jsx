@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 import { Link, useNavigate } from 'react-router-dom'
@@ -144,6 +144,19 @@ const GALLERY_IMAGES = Array.from({ length: 9 }, (_, i) => ({
 }))
 
 const EVENT_TYPES = ['Wedding', 'Birthday', 'Engagement', 'Baby Shower', 'Corporate Event', 'Anniversary', 'Other']
+
+const parseEventTypes = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean)
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(/[\n,]+/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
+  return []
+}
 
 /* ─── PRODUCT ILLUSTRATIONS — bespoke line art per piece ─── */
 function ProductArt({ id }) {
@@ -546,7 +559,7 @@ function Hero({ content = {} }) {
           ].map(([label], i) => (
             <span key={label} className="flex items-center gap-8">
               {i > 0 && <span className="hidden sm:block w-1 h-1 rounded-full bg-[#B07D3F]/50" />}
-              <span className="font-accent font-light text-[12px] md:text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/70 md:text-[#2B2118]/45">{label}</span>
+              <span className="font-accent font-light text-[12px] md:text-[10px] tracking-[0.35em] uppercase text-[#2B2118]">{label}</span>
             </span>
           ))}
         </motion.div>
@@ -903,69 +916,6 @@ function About({ content = {} }) {
   )
 }
 
-/* ─── WHY CHOOSE US — deep wine contrast section ─── */
-function StatCard({ stat, index }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
-
-  useEffect(() => {
-    if (!inView) return
-    let start = 0
-    const step = stat.end / (2000 / 16)
-    const timer = setInterval(() => {
-      start += step
-      if (start >= stat.end) { setCount(stat.end); clearInterval(timer) }
-      else setCount(Math.floor(start))
-    }, 16)
-    return () => clearInterval(timer)
-  }, [inView, stat.end])
-
-  return (
-    <motion.div
-      ref={ref}
-      variants={fadeUp} initial="hidden" whileInView="visible"
-      viewport={{ once: true }} custom={index}
-      className="group relative text-center px-8 py-14 rounded-[1.75rem] border border-[#D9A5A0]/15 bg-gradient-to-b from-[#D9A5A0]/[0.08] to-[#D9A5A0]/[0.02] backdrop-blur-sm shadow-[inset_0_1px_0_rgba(217,165,160,0.12)] hover:border-[#D9A5A0]/35 hover:-translate-y-1.5 hover:shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)] transition-all duration-700 overflow-hidden"
-    >
-      <span className="absolute top-0 left-1/2 -translate-x-1/2 w-16 group-hover:w-32 h-[2px] rounded-b-full bg-gradient-to-r from-transparent via-[#D9A5A0]/80 to-transparent transition-all duration-700" />
-      <span className="absolute -top-12 left-1/2 -translate-x-1/2 w-40 h-24 rounded-full bg-[#D9A5A0]/10 blur-[40px] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-      <div className="font-display text-6xl md:text-7xl font-semibold blush-shimmer mb-5 leading-none">
-        {count}{stat.suffix}
-      </div>
-      <h3 className="font-accent font-light text-[12px] tracking-[0.35em] uppercase text-[#FBF7F0] mb-3">{stat.label}</h3>
-      <p className="font-body text-[15px] italic text-[#FBF7F0]/75 md:text-[#FBF7F0]/50 leading-relaxed">{stat.desc}</p>
-    </motion.div>
-  )
-}
-
-function WhyChooseUs() {
-  const stats = [
-    { end: 5, suffix: '+', label: 'Years of Craft', desc: 'Creating unforgettable celebrations with care' },
-    { end: 250, suffix: '+', label: 'Events Styled', desc: 'From intimate soirées to grand weddings' },
-    { end: 100, suffix: '%', label: 'Client Delight', desc: 'Every event, a story our clients love retelling' },
-  ]
-
-  return (
-    <section className="py-24 md:py-36 bg-[#3B1F2B] relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(217,165,160,0.12),transparent_60%)]" />
-      {!isMobile && <div className="absolute bottom-0 left-1/4 w-[28rem] h-64 rounded-full bg-[#7B2D43]/25 blur-[120px]" />}
-      <div className="grain grain-strong" />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <SectionHeading
-          light eyebrow="The Sais Difference"
-          title="Why Choose" titleItalic="Sais Creation"
-          subtitle="Numbers that reflect a decade of passion and uncompromising standards"
-        />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-          {stats.map((stat, i) => <StatCard key={stat.label} stat={stat} index={i} />)}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ─── TESTIMONIALS ─── */
 function Testimonials({ items = [] }) {
   const [current, setCurrent] = useState(0)
   const timerRef = useRef(null)
@@ -1068,6 +1018,10 @@ function Contact({ content = {} }) {
   const [error, setError] = useState('')
 
   const whatsapp = content.whatsappNumber || WHATSAPP_NUMBER
+  const eventTypes = useMemo(() => {
+    const customTypes = parseEventTypes(content.eventTypes)
+    return customTypes.length > 0 ? customTypes : EVENT_TYPES
+  }, [content.eventTypes])
 
   const handleSend = () => {
     if (!name.trim()) { setError('Please tell us your name so we can greet you properly.'); return }
@@ -1175,7 +1129,7 @@ function Contact({ content = {} }) {
                     aria-label="Event type" className="lux-field"
                   >
                     <option value="">Select your event type…</option>
-                    {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    {eventTypes.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                   <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 rotate-90 text-[#B07D3F]/60 pointer-events-none" strokeWidth={1.5} />
                 </div>
@@ -1211,51 +1165,6 @@ function Contact({ content = {} }) {
   )
 }
 
-/* ─── CTA BANNER — inset deep wine card ─── */
-function CTABanner({ content = {} }) {
-  return (
-    <section className="relative py-20 md:py-24 bg-[#FBF7F0] overflow-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-          className="relative rounded-[2.5rem] bg-gradient-to-br from-[#46242F] via-[#3B1F2B] to-[#2E1822] px-6 py-20 md:py-24 text-center overflow-hidden shadow-[0_50px_110px_-35px_rgba(46,24,34,0.65),inset_0_1px_0_rgba(217,165,160,0.15)]"
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_30%,rgba(217,165,160,0.16),transparent_70%)]" />
-          {!isMobile && <>
-            <div className="absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-[#7B2D43]/35 blur-[100px]" />
-            <div className="absolute -top-20 -right-12 w-72 h-72 rounded-full bg-[#B07D3F]/15 blur-[90px]" />
-          </>}
-          <div className="grain grain-strong" />
-
-          <div className="relative z-10 max-w-3xl mx-auto">
-            <div className="relative w-16 h-16 mx-auto mb-7 flex items-center justify-center">
-              <span className="spin-slow absolute inset-0 rounded-full border border-dashed border-[#D9A5A0]/35" />
-              <Crown className="w-7 h-7 text-[#D9A5A0]" strokeWidth={1.2} />
-            </div>
-            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-semibold text-[#FBF7F0] leading-[1.08] mb-5">
-              {content.title || 'Your Dream Event,'}{' '}
-              <em className="blush-shimmer font-medium italic">{content.titleItalic || 'One Message Away'}</em>
-            </h2>
-            <p className="font-body italic text-[15px] md:text-lg text-[#FBF7F0]/75 md:text-[#FBF7F0]/55 mb-11 max-w-xl mx-auto">
-              {content.subtitle || 'Tell us your vision — we\'ll handle the magic. Quick quotes, friendly conversation, no obligations.'}
-            </p>
-            <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi Sais Creation! I want to plan my dream event. Can we talk?')}`}
-              target="_blank" rel="noopener noreferrer"
-              className="group relative inline-flex items-center gap-3 rounded-full bg-gradient-to-br from-[#E8BBB4] via-[#D9A5A0] to-[#C28D87] text-[#3B1F2B] font-accent font-medium text-[12px] tracking-[0.28em] uppercase px-12 py-5 overflow-hidden shadow-[0_16px_45px_-12px_rgba(217,165,160,0.6),inset_0_1px_0_rgba(255,255,255,0.4)] hover:shadow-[0_0_60px_rgba(217,165,160,0.45)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-500"
-            >
-              <span className="shine absolute top-0 bottom-0 w-1/3 bg-white/40 -translate-x-[150%]" />
-              <MessageCircle className="w-4 h-4 relative z-10 group-hover:rotate-12 transition-transform duration-300" strokeWidth={1.8} />
-              <span className="relative z-10">{content.buttonText || 'Start Planning on WhatsApp'}</span>
-            </a>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
-/* ─── FOOTER — deep wine ─── */
 function Footer({ content = {} }) {
   return (
     <footer className="bg-[#2E1822] relative overflow-hidden rounded-t-[2.5rem] md:rounded-t-[3rem]">
@@ -1435,10 +1344,8 @@ export default function Home() {
       <MarqueeStrip />
       <Gallery images={galleryImages || GALLERY_IMAGES} />
       <About content={siteContent.about} />
-      <WhyChooseUs />
       {dynamicTestimonials?.length > 0 && <Testimonials items={dynamicTestimonials} />}
       <Contact content={siteContent.contact} />
-      <CTABanner content={siteContent.cta} />
       <Footer content={siteContent.footer} />
     </div>
   )

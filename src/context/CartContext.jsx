@@ -23,7 +23,15 @@ export function CartProvider({ children }) {
   const addToCart = (product) => {
     setCart((prev) => {
       if (prev.some((item) => item.id === product.id)) return prev
-      return [...prev, { id: product.id, name: product.name, imageUrl: product.imageUrl || '', price: product.price || '', categoryId: product.categoryId || '' }]
+      return [...prev, {
+        id: product.id,
+        productId: product.productId || product.id,
+        styleIndex: product.styleIndex ?? null,
+        name: product.name,
+        imageUrl: product.imageUrl || '',
+        price: product.price || '',
+        categoryId: product.categoryId || '',
+      }]
     })
   }
 

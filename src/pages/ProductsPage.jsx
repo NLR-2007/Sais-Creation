@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import {
   Sparkles, Menu, X, Search, Tag, ArrowRight, ArrowLeft,
-  Package, Heart, MessageCircle, Send, Filter, LogIn, LogOut, Shield, Gem,
+  Package, Filter, LogIn, LogOut, Shield, Gem, MessageCircle,
   ChevronDown, Eye, ShoppingCart,
 } from 'lucide-react'
 
@@ -512,36 +512,37 @@ export default function ProductsPage({ pageType }) {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 md:py-20 bg-[#FBF7F0]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="relative rounded-[2rem] bg-gradient-to-br from-[#46242F] via-[#3B1F2B] to-[#2E1822] px-6 py-14 md:py-16 text-center overflow-hidden shadow-[0_40px_90px_-30px_rgba(46,24,34,0.55),inset_0_1px_0_rgba(217,165,160,0.12)]"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_30%,rgba(217,165,160,0.14),transparent_70%)]" />
-            <div className="grain grain-strong" />
-            <div className="relative z-10">
-              <h2 className="font-display text-3xl md:text-4xl font-semibold text-[#FBF7F0] leading-[1.1] mb-4">
-                Can't find what you're looking for?
-              </h2>
-              <p className="font-body italic text-[15px] text-[#FBF7F0]/75 md:text-[#FBF7F0]/50 mb-8 max-w-lg mx-auto">
-                We create custom decor for every occasion. Tell us your vision and we'll make it happen.
-              </p>
-              <a
-                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi Sais Creation! I need custom decor for my event. Can we discuss?')}`}
-                target="_blank" rel="noopener noreferrer"
-                className="group relative inline-flex items-center gap-3 rounded-full bg-gradient-to-br from-[#E8BBB4] via-[#D9A5A0] to-[#C28D87] text-[#3B1F2B] font-accent font-medium text-[12px] tracking-[0.25em] uppercase px-10 py-4 overflow-hidden shadow-[0_14px_40px_-10px_rgba(217,165,160,0.55),inset_0_1px_0_rgba(255,255,255,0.4)] hover:shadow-[0_0_50px_rgba(217,165,160,0.4)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-500"
-              >
-                <MessageCircle className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" strokeWidth={1.6} />
-                <span>Request Custom Decor</span>
-              </a>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {pageType === 'decors' && (
+        <section className="py-16 md:py-20 bg-[#FBF7F0]">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="relative rounded-[2rem] bg-gradient-to-br from-[#46242F] via-[#3B1F2B] to-[#2E1822] px-6 py-14 md:py-16 text-center overflow-hidden shadow-[0_40px_90px_-30px_rgba(46,24,34,0.55),inset_0_1px_0_rgba(217,165,160,0.12)]"
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_30%,rgba(217,165,160,0.14),transparent_70%)]" />
+              <div className="grain grain-strong" />
+              <div className="relative z-10">
+                <h2 className="font-display text-3xl md:text-4xl font-semibold text-[#FBF7F0] leading-[1.1] mb-4">
+                  Can't find what you're looking for?
+                </h2>
+                <p className="font-body italic text-[15px] text-[#FBF7F0]/75 md:text-[#FBF7F0]/50 mb-8 max-w-lg mx-auto">
+                  We create custom decor for every occasion. Tell us your vision and we'll make it happen.
+                </p>
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hi Sais Creation! I need custom decor for my event. Can we discuss?')}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="group relative inline-flex items-center gap-3 rounded-full bg-gradient-to-br from-[#E8BBB4] via-[#D9A5A0] to-[#C28D87] text-[#3B1F2B] font-accent font-medium text-[12px] tracking-[0.25em] uppercase px-10 py-4 overflow-hidden shadow-[0_14px_40px_-10px_rgba(217,165,160,0.55),inset_0_1px_0_rgba(255,255,255,0.4)] hover:shadow-[0_0_50px_rgba(217,165,160,0.4)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-500"
+                >
+                  <MessageCircle className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" strokeWidth={1.6} />
+                  <span>Request Custom Decor</span>
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
 
       {/* Footer */}
       <footer className="bg-[#2E1822] relative overflow-hidden rounded-t-[2.5rem] md:rounded-t-[3rem]">

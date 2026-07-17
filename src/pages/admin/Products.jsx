@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { db, storage } from '../../config/firebase'
 import {
-  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, query,
+  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, serverTimestamp, orderBy, query,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import compressImage from '../../utils/compressImage'
@@ -16,7 +16,7 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 }
 
-const EMPTY_PRODUCT = { name: '', desc: '', price: '', tag: '', imageUrl: '', categoryId: '', featured: false, styles: [] }
+const EMPTY_PRODUCT = { name: '', desc: '', price: '', adminPrice: '', tag: '', imageUrl: '', categoryId: '', featured: false, styles: [] }
 
 function migrateToStyles(product) {
   if (product.styles?.length > 0) return product.styles
@@ -26,8 +26,32 @@ function migrateToStyles(product) {
     photos: [url],
     description: (product.photoDescriptions || [])[i] || '',
     price: (product.photoPrices || [])[i] || '',
+    adminPrice: (product.photoAdminPrices || [])[i] || '',
     order: (product.photoOrder || [])[i] || 0,
   }))
+}
+
+async function fetchProductAdminPrices() {
+  try {
+    const snap = await getDocs(collection(db, 'productAdminPrices'))
+    return new Map(snap.docs.map((d) => [d.id, d.data()]))
+  } catch {
+    return new Map()
+  }
+}
+
+function applyAdminPricing(product, pricing) {
+  if (!pricing) return product
+  const adminStyles = pricing.styles || []
+  return {
+    ...product,
+    adminPrice: pricing.adminPrice || '',
+    photoAdminPrices: adminStyles.map((style) => style?.adminPrice || ''),
+    styles: (product.styles || []).map((style, index) => ({
+      ...style,
+      adminPrice: adminStyles[index]?.adminPrice || '',
+    })),
+  }
 }
 
 export default function Products({ sectionType }) {
@@ -52,8 +76,8 @@ export default function Products({ sectionType }) {
   const fetchProducts = async () => {
     try {
       const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'))
-      const snap = await getDocs(q)
-      setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      const [snap, adminPrices] = await Promise.all([getDocs(q), fetchProductAdminPrices()])
+      setProducts(snap.docs.map((d) => applyAdminPricing({ id: d.id, ...d.data() }, adminPrices.get(d.id))))
     } catch {
       setProducts([])
     }
@@ -65,8 +89,8 @@ export default function Products({ sectionType }) {
     ;(async () => {
       try {
         const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'))
-        const snap = await getDocs(q)
-        if (!cancelled) setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        const [snap, adminPrices] = await Promise.all([getDocs(q), fetchProductAdminPrices()])
+        if (!cancelled) setProducts(snap.docs.map((d) => applyAdminPricing({ id: d.id, ...d.data() }, adminPrices.get(d.id))))
       } catch {
         if (!cancelled) setProducts([])
       }
@@ -107,7 +131,7 @@ export default function Products({ sectionType }) {
   const openEdit = (product) => {
     setEditing(product)
     const styles = migrateToStyles(product)
-    setForm({ name: product.name, desc: product.desc, price: product.price, tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '', featured: product.featured || false, styles })
+    setForm({ name: product.name, desc: product.desc, price: product.price, adminPrice: product.adminPrice || '', tag: product.tag || '', imageUrl: product.imageUrl || '', categoryId: product.categoryId || '', featured: product.featured || false, styles })
     setImageFile(null)
     setImagePreview(product.imageUrl || '')
     setModalOpen(true)
@@ -123,7 +147,7 @@ export default function Products({ sectionType }) {
   const addStyle = () => {
     setForm((prev) => ({
       ...prev,
-      styles: [...(prev.styles || []), { photos: [], description: '', price: '', order: 0 }],
+      styles: [...(prev.styles || []), { photos: [], description: '', price: '', adminPrice: '', order: 0 }],
     }))
   }
 
@@ -205,10 +229,22 @@ export default function Products({ sectionType }) {
         })),
       }
 
+      const adminPricing = {
+        productName: form.name.trim(),
+        adminPrice: form.adminPrice.trim(),
+        styles: (form.styles || []).map((s) => ({ adminPrice: s.adminPrice || '' })),
+        updatedAt: serverTimestamp(),
+      }
+
       if (editing) {
         await updateDoc(doc(db, 'products', editing.id), { ...data, updatedAt: serverTimestamp() })
+        await setDoc(doc(db, 'productAdminPrices', editing.id), adminPricing, { merge: true })
       } else {
-        await addDoc(collection(db, 'products'), { ...data, createdAt: serverTimestamp() })
+        const productRef = await addDoc(collection(db, 'products'), { ...data, createdAt: serverTimestamp() })
+        await setDoc(doc(db, 'productAdminPrices', productRef.id), {
+          ...adminPricing,
+          createdAt: serverTimestamp(),
+        }, { merge: true })
       }
 
       await fetchProducts()
@@ -361,6 +397,7 @@ export default function Products({ sectionType }) {
                   </p>
                 )}
                 {product.price && <p className="font-display italic text-lg text-[#B07D3F] font-semibold">{product.price}</p>}
+                {product.adminPrice && <p className="font-accent font-light text-[9px] tracking-[0.2em] uppercase text-[#7B2D43]/60 mt-1">Admin quote: {product.adminPrice}</p>}
               </div>
             </motion.div>
           ))}
@@ -471,14 +508,24 @@ export default function Products({ sectionType }) {
                 </div>
 
                 {/* Price + Tag row */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Price (Optional)</label>
+                    <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">User Price (Optional)</label>
                     <input
                       type="text"
                       value={form.price}
                       onChange={(e) => setForm({ ...form, price: e.target.value })}
                       placeholder="$49.99"
+                      className="lux-field !pl-5"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Admin Quote Price (Optional)</label>
+                    <input
+                      type="text"
+                      value={form.adminPrice}
+                      onChange={(e) => setForm({ ...form, adminPrice: e.target.value })}
+                      placeholder="Optional"
                       className="lux-field !pl-5"
                     />
                   </div>
@@ -545,12 +592,22 @@ export default function Products({ sectionType }) {
                             <p className="font-accent font-medium text-[11px] tracking-[0.15em] uppercase text-[#7B2D43]">Style {sIdx + 1}</p>
                             <div className="flex items-center gap-3">
                               <div className="flex items-center gap-1.5">
-                                <span className="font-accent font-light text-[9px] tracking-[0.15em] uppercase text-[#B07D3F]/60">Price</span>
+                                <span className="font-accent font-light text-[9px] tracking-[0.15em] uppercase text-[#B07D3F]/60">User</span>
                                 <input
                                   type="text"
                                   value={style.price || ''}
                                   onChange={(e) => updateStyleField(sIdx, 'price', e.target.value)}
                                   placeholder="—"
+                                  className="w-20 bg-white border border-[#B07D3F]/15 rounded-lg py-1 px-2 font-body text-[12px] text-center text-[#2B2118] placeholder:text-[#2B2118]/20 outline-none focus:border-[#7B2D43]/40 transition-all duration-300"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-accent font-light text-[9px] tracking-[0.15em] uppercase text-[#B07D3F]/60">Admin</span>
+                                <input
+                                  type="text"
+                                  value={style.adminPrice || ''}
+                                  onChange={(e) => updateStyleField(sIdx, 'adminPrice', e.target.value)}
+                                  placeholder="Optional"
                                   className="w-20 bg-white border border-[#B07D3F]/15 rounded-lg py-1 px-2 font-body text-[12px] text-center text-[#2B2118] placeholder:text-[#2B2118]/20 outline-none focus:border-[#7B2D43]/40 transition-all duration-300"
                                 />
                               </div>

@@ -5,7 +5,7 @@ import SEO from '../components/SEO'
 import { db, storage } from '../config/firebase'
 import {
   doc, getDoc, collection, getDocs, addDoc, deleteDoc,
-  query, orderBy, where, serverTimestamp,
+  query, where, serverTimestamp,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import compressImage from '../utils/compressImage'
@@ -310,6 +310,7 @@ export default function ProductDetail() {
   const [reviewsLoading, setReviewsLoading] = useState(true)
 
   const [newRating, setNewRating] = useState(0)
+  const [reviewerName, setReviewerName] = useState('')
   const [newComment, setNewComment] = useState('')
   const [newPhotos, setNewPhotos] = useState([])
   const [photoPreview, setPhotoPreview] = useState([])
@@ -334,12 +335,22 @@ export default function ProductDetail() {
       try {
         const q = query(
           collection(db, 'reviews'),
-          where('productId', '==', id),
-          orderBy('createdAt', 'desc')
+          where('productId', '==', id)
         )
         const snap = await getDocs(q)
-        setReviews(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((review) => review.visible !== false))
-      } catch { /* no reviews yet */ }
+        const visibleReviews = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((review) => review.visible !== false)
+          .sort((a, b) => {
+            const aTime = a.createdAt?.toMillis?.() || 0
+            const bTime = b.createdAt?.toMillis?.() || 0
+            return bTime - aTime
+          })
+        setReviews(visibleReviews)
+      } catch (err) {
+        console.error('Error loading reviews:', err)
+        setReviews([])
+      }
       setReviewsLoading(false)
     }
     fetchReviews()
@@ -421,7 +432,6 @@ export default function ProductDetail() {
 
   const handleSubmitReview = async (e) => {
     e.preventDefault()
-    if (!user) return
     if (newRating === 0) {
       alert('Please select a rating')
       return
@@ -442,8 +452,9 @@ export default function ProductDetail() {
 
       const reviewData = {
         productId: id,
-        userId: user.uid,
-        userName: userProfile?.name || user.displayName || 'Customer',
+        productName: product?.name || '',
+        userId: user?.uid || '',
+        userName: reviewerName.trim() || userProfile?.name || user?.displayName || 'Customer',
         rating: newRating,
         comment: newComment.trim(),
         photos: uploadedUrls,
@@ -454,6 +465,7 @@ export default function ProductDetail() {
       const docRef = await addDoc(collection(db, 'reviews'), reviewData)
       setReviews((prev) => [{ id: docRef.id, ...reviewData, createdAt: { toDate: () => new Date() } }, ...prev])
       setNewRating(0)
+      if (!user) setReviewerName('')
       setNewComment('')
       photoPreview.forEach((url) => URL.revokeObjectURL(url))
       setNewPhotos([])
@@ -687,6 +699,8 @@ export default function ProductDetail() {
                       <button
                         onClick={() => addToCart({
                           id: cartId,
+                          productId: product.id,
+                          styleIndex: style.origIdx,
                           name: sortedStyles.length > 1 ? `${product.name} — Style ${i + 1}` : product.name,
                           imageUrl: style.photos[0],
                           price: getStylePrice(i),
@@ -818,94 +832,94 @@ export default function ProductDetail() {
           )}
 
           {/* Write a Review */}
-          {user ? (
-            <div className="bg-white rounded-[1.75rem] border border-[#B07D3F]/10 p-7 md:p-9 shadow-[0_2px_12px_rgba(59,31,43,0.04)]">
-              <h3 className="font-display text-xl font-semibold text-[#2B2118] mb-6">Write a Review</h3>
-              <form onSubmit={handleSubmitReview} className="space-y-5">
-                <div>
-                  <label className="font-accent font-light text-[11px] tracking-[0.2em] uppercase text-[#2B2118]/50 block mb-2.5">
-                    Your Rating
-                  </label>
-                  <StarRating rating={newRating} size="lg" interactive onChange={setNewRating} />
-                </div>
+          <div className="bg-white rounded-[1.75rem] border border-[#B07D3F]/10 p-7 md:p-9 shadow-[0_2px_12px_rgba(59,31,43,0.04)]">
+            <h3 className="font-display text-xl font-semibold text-[#2B2118] mb-6">Write a Review</h3>
+            <form onSubmit={handleSubmitReview} className="space-y-5">
+              <div>
+                <label className="font-accent font-light text-[11px] tracking-[0.2em] uppercase text-[#2B2118]/50 block mb-2.5">
+                  Your Name
+                </label>
+                <input
+                  type="text"
+                  value={reviewerName}
+                  onChange={(e) => setReviewerName(e.target.value)}
+                  placeholder={userProfile?.name || user?.displayName || 'Your name'}
+                  className="w-full bg-[#FBF7F0] border border-[#B07D3F]/15 rounded-full px-5 py-4 font-body text-[14px] text-[#2B2118] placeholder:text-[#2B2118]/25 outline-none focus:border-[#7B2D43]/30 focus:shadow-[0_0_0_4px_rgba(123,45,67,0.06)] transition-all duration-300"
+                />
+              </div>
 
-                <div>
-                  <label className="font-accent font-light text-[11px] tracking-[0.2em] uppercase text-[#2B2118]/50 block mb-2.5">
-                    Your Review
-                  </label>
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    rows={4}
-                    placeholder="Share your experience with this product..."
-                    className="w-full bg-[#FBF7F0] border border-[#B07D3F]/15 rounded-2xl px-5 py-4 font-body text-[14px] text-[#2B2118] placeholder:text-[#2B2118]/25 outline-none resize-none focus:border-[#7B2D43]/30 focus:shadow-[0_0_0_4px_rgba(123,45,67,0.06)] transition-all duration-300"
-                  />
-                </div>
+              <div>
+                <label className="font-accent font-light text-[11px] tracking-[0.2em] uppercase text-[#2B2118]/50 block mb-2.5">
+                  Your Rating
+                </label>
+                <StarRating rating={newRating} size="lg" interactive onChange={setNewRating} />
+              </div>
 
-                <div>
-                  <label className="font-accent font-light text-[11px] tracking-[0.2em] uppercase text-[#2B2118]/50 block mb-2.5">
-                    Add Photos <span className="normal-case tracking-normal text-[#2B2118]/30">(optional)</span>
-                  </label>
-                  {photoPreview.length > 0 && (
-                    <div className="flex gap-2 mb-3 flex-wrap">
-                      {photoPreview.map((url, i) => (
-                        <div key={i} className="relative group">
-                          <img src={url} alt="" className="w-20 h-20 rounded-xl object-contain bg-[#F3EADC] border border-[#B07D3F]/15" />
-                          <button
-                            type="button"
-                            onClick={() => removeNewPhoto(i)}
-                            className="absolute -top-2 -right-2 p-1 rounded-full bg-white border border-red-200 text-red-400 hover:text-red-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-dashed border-[#B07D3F]/25 font-accent font-light text-[11px] tracking-[0.15em] uppercase text-[#2B2118]/45 hover:border-[#7B2D43]/40 hover:text-[#7B2D43] hover:bg-[#7B2D43]/[0.03] transition-all duration-300"
-                  >
-                    <Camera className="w-4 h-4" strokeWidth={1.5} />
-                    Upload Photos
-                  </button>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                  />
-                </div>
+              <div>
+                <label className="font-accent font-light text-[11px] tracking-[0.2em] uppercase text-[#2B2118]/50 block mb-2.5">
+                  Your Review
+                </label>
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={4}
+                  placeholder="Share your experience with this product..."
+                  className="w-full bg-[#FBF7F0] border border-[#B07D3F]/15 rounded-2xl px-5 py-4 font-body text-[14px] text-[#2B2118] placeholder:text-[#2B2118]/25 outline-none resize-none focus:border-[#7B2D43]/30 focus:shadow-[0_0_0_4px_rgba(123,45,67,0.06)] transition-all duration-300"
+                />
+              </div>
 
+              <div>
+                <label className="font-accent font-light text-[11px] tracking-[0.2em] uppercase text-[#2B2118]/50 block mb-2.5">
+                  Add Photos <span className="normal-case tracking-normal text-[#2B2118]/30">(optional)</span>
+                </label>
+                {photoPreview.length > 0 && (
+                  <div className="flex gap-2 mb-3 flex-wrap">
+                    {photoPreview.map((url, i) => (
+                      <div key={i} className="relative group">
+                        <img src={url} alt="" className="w-20 h-20 rounded-xl object-contain bg-[#F3EADC] border border-[#B07D3F]/15" />
+                        <button
+                          type="button"
+                          onClick={() => removeNewPhoto(i)}
+                          className="absolute -top-2 -right-2 p-1 rounded-full bg-white border border-red-200 text-red-400 hover:text-red-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <button
-                  type="submit"
-                  disabled={submitting || newRating === 0}
-                  className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.25em] uppercase shadow-[0_10px_28px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_16px_40px_-10px_rgba(123,45,67,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-dashed border-[#B07D3F]/25 font-accent font-light text-[11px] tracking-[0.15em] uppercase text-[#2B2118]/45 hover:border-[#7B2D43]/40 hover:text-[#7B2D43] hover:bg-[#7B2D43]/[0.03] transition-all duration-300"
                 >
-                  {submitting ? (
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" strokeWidth={1.5} />
-                  )}
-                  {submitting ? 'Submitting...' : 'Submit Review'}
+                  <Camera className="w-4 h-4" strokeWidth={1.5} />
+                  Upload Photos
                 </button>
-              </form>
-            </div>
-          ) : (
-            <div className="bg-[#F3EADC]/50 rounded-[1.5rem] border border-[#B07D3F]/10 p-8 text-center">
-              <p className="font-body text-[15px] md:text-[14px] text-[#2B2118]/75 md:text-[#2B2118]/50 mb-4">Sign in to write a review</p>
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.2em] uppercase shadow-[0_8px_20px_-8px_rgba(123,45,67,0.5)] hover:shadow-[0_12px_28px_-8px_rgba(123,45,67,0.55)] hover:-translate-y-0.5 transition-all duration-400"
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting || newRating === 0}
+                className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.25em] uppercase shadow-[0_10px_28px_-8px_rgba(123,45,67,0.5),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_16px_40px_-10px_rgba(123,45,67,0.55)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
-                <LogIn className="w-4 h-4" strokeWidth={1.5} />
-                Sign In
-              </Link>
-            </div>
-          )}
+                {submitting ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" strokeWidth={1.5} />
+                )}
+                {submitting ? 'Submitting...' : 'Submit Review'}
+              </button>
+            </form>
+          </div>
         </motion.div>
       </section>
 

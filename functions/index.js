@@ -2,7 +2,6 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https')
 const { onDocumentCreated } = require('firebase-functions/v2/firestore')
 const admin = require('firebase-admin')
 const fetch = require('node-fetch')
-const nodemailer = require('nodemailer')
 
 admin.initializeApp()
 const db = admin.firestore()
@@ -37,6 +36,119 @@ async function sendTelegramMessage(chatId, text, botToken) {
   const data = await res.json()
   if (!data.ok) throw new Error(`Telegram API error: ${data.description}`)
   return data
+}
+
+async function sendTelegramPhoto(chatId, photoUrl, caption, botToken) {
+  const url = `https://api.telegram.org/bot${botToken}/sendPhoto`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      photo: photoUrl,
+      caption,
+      parse_mode: 'HTML',
+    }),
+  })
+  const data = await res.json()
+  if (!data.ok) throw new Error(`Telegram API error: ${data.description}`)
+  return data
+}
+
+async function sendTelegramItemPhotos(chatId, items, botToken) {
+  const photoItems = (items || [])
+    .map((item, index) => ({
+      index: index + 1,
+      name: item.name || 'Selected item',
+      imageUrl: item.imageUrl,
+      adminPrice: item.adminPrice || '',
+    }))
+    .filter((item) => item.imageUrl)
+
+  if (photoItems.length === 0) return
+
+  for (const item of photoItems) {
+    await sendTelegramPhoto(
+      chatId,
+      item.imageUrl,
+      `${item.index}. ${escapeHtml(item.name)}${item.adminPrice ? `\nAdmin price: ${escapeHtml(formatAdminPrice(item.adminPrice))}` : ''}`,
+      botToken
+    )
+  }
+}
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function parsePriceAmount(value) {
+  const match = String(value || '').match(/\d[\d,]*(?:\.\d+)?/)
+  const amount = match ? Number(match[0].replace(/,/g, '')) : 0
+  return Number.isFinite(amount) ? amount : 0
+}
+
+function getAdminTotal(items = []) {
+  return items.reduce((sum, item) => sum + parsePriceAmount(item.adminPrice), 0)
+}
+
+function formatAdminPrice(value) {
+  const text = String(value || '').trim()
+  if (!text) return ''
+  if (/^\$/.test(text)) return text
+  if (/^\d[\d,]*(?:\.\d+)?(?:\b|\/)/.test(text)) return `$${text}`
+  return text
+}
+
+function getAdminPriceLabel(item) {
+  return item.adminPrice ? escapeHtml(formatAdminPrice(item.adminPrice)) : 'Not set'
+}
+
+function getProductLookup(item) {
+  if (item.productId) {
+    return { productId: item.productId, styleIndex: item.styleIndex ?? null }
+  }
+
+  const match = String(item.id || '').match(/^(.*)_style_(-?\d+)$/)
+  if (match) {
+    return { productId: match[1], styleIndex: Number(match[2]) }
+  }
+
+  return { productId: item.id || '', styleIndex: null }
+}
+
+async function enrichItemsWithAdminPrices(items = []) {
+  const cache = new Map()
+
+  return Promise.all(items.map(async (item) => {
+    const lookup = getProductLookup(item)
+    let pricing = null
+
+    if (lookup.productId) {
+      if (cache.has(lookup.productId)) {
+        pricing = cache.get(lookup.productId)
+      } else {
+        const snap = await db.collection('productAdminPrices').doc(lookup.productId).get()
+        pricing = snap.exists ? snap.data() : null
+        cache.set(lookup.productId, pricing)
+      }
+    }
+
+    const stylePrice = Number.isInteger(lookup.styleIndex) && lookup.styleIndex >= 0
+      ? pricing?.styles?.[lookup.styleIndex]?.adminPrice
+      : ''
+
+    return {
+      ...item,
+      productId: lookup.productId || item.productId || '',
+      styleIndex: lookup.styleIndex,
+      adminPrice: stylePrice || pricing?.adminPrice || item.adminPrice || '',
+    }
+  }))
 }
 
 // ─── Send Admin OTP ───
@@ -141,124 +253,6 @@ exports.verifyAdminTelegramOtp = onCall(
   }
 )
 
-// ─── Send Quote via Email ───
-// Sends a formatted email to both the admin and the customer (if email provided).
-exports.sendQuoteEmail = onCall(
-  {
-    region: 'asia-south1',
-    secrets: ['SMTP_PASSWORD'],
-    cors: true,
-  },
-  async (request) => {
-    const { orderId } = request.data
-    if (!orderId) throw new HttpsError('invalid-argument', 'Order ID required')
-
-    const orderDoc = await db.collection('orders').doc(orderId).get()
-    if (!orderDoc.exists) throw new HttpsError('not-found', 'Order not found')
-
-    const order = orderDoc.data()
-    const smtpEmail = 'saicreations729@gmail.com'
-    const smtpPassword = process.env.SMTP_PASSWORD
-
-    if (!smtpPassword) {
-      throw new HttpsError('failed-precondition', 'Email password not configured')
-    }
-
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: smtpEmail, pass: smtpPassword },
-    })
-
-    const itemsHtml = (order.items || [])
-      .map(
-        (item, i) =>
-          `<tr>
-            <td style="padding:10px 12px;border-bottom:1px solid #f0e8df;color:#2B2118;font-size:14px;">${i + 1}</td>
-            <td style="padding:10px 12px;border-bottom:1px solid #f0e8df;color:#2B2118;font-size:14px;">${item.name}</td>
-            ${item.imageUrl ? `<td style="padding:10px 12px;border-bottom:1px solid #f0e8df;"><img src="${item.imageUrl}" alt="${item.name}" width="60" height="60" style="border-radius:8px;object-fit:contain;" /></td>` : '<td style="padding:10px 12px;border-bottom:1px solid #f0e8df;color:#999;font-size:12px;">No image</td>'}
-          </tr>`
-      )
-      .join('')
-
-    const emailHtml = `
-      <div style="max-width:600px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#FBF7F0;border-radius:16px;overflow:hidden;border:1px solid #e8ddd0;">
-        <div style="background:linear-gradient(135deg,#7B2D43,#5C1F31);padding:32px 24px;text-align:center;">
-          <h1 style="color:#FBF7F0;font-size:24px;margin:0 0 4px;">✨ Sais Creation</h1>
-          <p style="color:#D9A5A0;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:0;">New Quote Request</p>
-        </div>
-        <div style="padding:28px 24px;">
-          <h2 style="color:#7B2D43;font-size:16px;letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid #D9A5A0;padding-bottom:8px;margin-top:0;">Customer Details</h2>
-          <table style="width:100%;margin-bottom:24px;">
-            <tr><td style="padding:6px 0;color:#B07D3F;font-size:13px;width:100px;">Name</td><td style="padding:6px 0;color:#2B2118;font-size:14px;font-weight:600;">${order.customerName}</td></tr>
-            <tr><td style="padding:6px 0;color:#B07D3F;font-size:13px;">Phone</td><td style="padding:6px 0;color:#2B2118;font-size:14px;">${order.customerPhone}</td></tr>
-            ${order.customerEmail ? `<tr><td style="padding:6px 0;color:#B07D3F;font-size:13px;">Email</td><td style="padding:6px 0;color:#2B2118;font-size:14px;">${order.customerEmail}</td></tr>` : ''}
-          </table>
-          <h2 style="color:#7B2D43;font-size:16px;letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid #D9A5A0;padding-bottom:8px;">Requested Items (${(order.items || []).length})</h2>
-          <table style="width:100%;border-collapse:collapse;">
-            <thead>
-              <tr style="background:#F3EADC;">
-                <th style="padding:10px 12px;text-align:left;color:#B07D3F;font-size:11px;letter-spacing:1px;text-transform:uppercase;">#</th>
-                <th style="padding:10px 12px;text-align:left;color:#B07D3F;font-size:11px;letter-spacing:1px;text-transform:uppercase;">Item</th>
-                <th style="padding:10px 12px;text-align:left;color:#B07D3F;font-size:11px;letter-spacing:1px;text-transform:uppercase;">Photo</th>
-              </tr>
-            </thead>
-            <tbody>${itemsHtml}</tbody>
-          </table>
-        </div>
-        <div style="background:#F3EADC;padding:16px 24px;text-align:center;">
-          <p style="color:#B07D3F;font-size:11px;margin:0;">Sais Creations Decor Service & Party Rentals LLC · San Jose, CA</p>
-        </div>
-      </div>
-    `
-
-    const subject = `New Quote Request from ${order.customerName} — ${(order.items || []).length} items`
-
-    await transporter.sendMail({
-      from: `"Sais Creation" <${smtpEmail}>`,
-      to: smtpEmail,
-      subject,
-      html: emailHtml,
-    })
-
-    if (order.customerEmail) {
-      const customerHtml = `
-        <div style="max-width:600px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#FBF7F0;border-radius:16px;overflow:hidden;border:1px solid #e8ddd0;">
-          <div style="background:linear-gradient(135deg,#7B2D43,#5C1F31);padding:32px 24px;text-align:center;">
-            <h1 style="color:#FBF7F0;font-size:24px;margin:0 0 4px;">✨ Sais Creation</h1>
-            <p style="color:#D9A5A0;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:0;">Quote Confirmation</p>
-          </div>
-          <div style="padding:28px 24px;">
-            <p style="color:#2B2118;font-size:15px;line-height:1.6;">Hi ${order.customerName},</p>
-            <p style="color:#2B2118;font-size:15px;line-height:1.6;">Thank you for your interest! We've received your quote request for <strong>${(order.items || []).length} item(s)</strong>. Our team will review your requirements and get back to you shortly with pricing and availability.</p>
-            <h2 style="color:#7B2D43;font-size:16px;letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid #D9A5A0;padding-bottom:8px;">Your Requested Items</h2>
-            <table style="width:100%;border-collapse:collapse;">
-              <tbody>
-                ${(order.items || []).map((item, i) => `<tr><td style="padding:8px 0;border-bottom:1px solid #f0e8df;color:#2B2118;font-size:14px;">${i + 1}. ${item.name}</td></tr>`).join('')}
-              </tbody>
-            </table>
-            <p style="color:#2B2118;font-size:15px;line-height:1.6;margin-top:20px;">We'll be in touch soon! You can also reach us on WhatsApp at <strong>+1 (408) 387-4854</strong>.</p>
-          </div>
-          <div style="background:#F3EADC;padding:16px 24px;text-align:center;">
-            <p style="color:#B07D3F;font-size:11px;margin:0;">Sais Creations Decor Service & Party Rentals LLC · San Jose, CA</p>
-          </div>
-        </div>
-      `
-      await transporter.sendMail({
-        from: `"Sais Creation" <${smtpEmail}>`,
-        to: order.customerEmail,
-        subject: `Your Quote Request — Sais Creation`,
-        html: customerHtml,
-      })
-    }
-
-    await db.collection('orders').doc(orderId).update({ sentVia: 'email' })
-
-    return { success: true }
-  }
-)
-
-// ─── Telegram Notification on New Order ───
-// Automatically notifies admin via Telegram when a new quote/order is created.
 exports.notifyNewOrder = onDocumentCreated(
   {
     document: 'orders/{orderId}',
@@ -277,23 +271,31 @@ exports.notifyNewOrder = onDocumentCreated(
       .where('role', '==', 'admin')
       .get()
 
-    const itemsList = (order.items || [])
-      .map((item, i) => `  ${i + 1}. ${item.name}`)
+    const items = await enrichItemsWithAdminPrices(order.items || [])
+    const adminTotal = getAdminTotal(items)
+    await event.data.ref.update({
+      items,
+      adminTotal,
+      adminPricesResolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+    })
+    const itemsList = items
+      .map((item, i) => `  ${i + 1}. ${escapeHtml(item.name || 'Selected item')} - Admin price: ${getAdminPriceLabel(item)}`)
       .join('\n')
 
     const message =
       `📋 <b>New Quote Request!</b>\n\n` +
-      `<b>Customer:</b> ${order.customerName}\n` +
-      `<b>Phone:</b> ${order.customerPhone}\n` +
-      `${order.customerEmail ? `<b>Email:</b> ${order.customerEmail}\n` : ''}` +
-      `\n<b>Items (${(order.items || []).length}):</b>\n${itemsList}\n\n` +
-      `Check the admin panel for details.`
+      `<b>Customer:</b> ${escapeHtml(order.customerName)}\n` +
+      `<b>Phone:</b> ${escapeHtml(order.customerPhone)}\n` +
+      `\n<b>Items (${items.length}):</b>\n${itemsList}\n\n` +
+      `<b>Admin Total:</b> ${adminTotal > 0 ? `$${adminTotal.toFixed(2)}` : 'Not set'}\n\n` +
+      `Item photos will be sent below.`
 
     for (const adminDoc of adminsSnap.docs) {
       const chatId = adminDoc.data().telegramChatId
       if (chatId) {
         try {
           await sendTelegramMessage(chatId, message, botToken)
+          await sendTelegramItemPhotos(chatId, items, botToken)
         } catch {}
       }
     }
