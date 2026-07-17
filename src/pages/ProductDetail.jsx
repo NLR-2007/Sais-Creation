@@ -82,6 +82,9 @@ function Navbar({ user, isAdmin, onLogout, cartCount }) {
             <Link to="/decors" className="font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
               Decors
             </Link>
+            <Link to="/reviews" className="font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
+              Reviews
+            </Link>
             <a href="/#about" className="font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300">
               About
             </a>
@@ -145,6 +148,9 @@ function Navbar({ user, isAdmin, onLogout, cartCount }) {
                 </Link>
                 <Link to="/decors" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
                   Decors
+                </Link>
+                <Link to="/reviews" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  Reviews
                 </Link>
                 <a href="/#about" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
                   About
@@ -460,6 +466,8 @@ export default function ProductDetail() {
         photos: uploadedUrls,
         createdAt: serverTimestamp(),
         visible: true,
+        showOnHome: false,
+        showOnReviews: false,
       }
 
       const docRef = await addDoc(collection(db, 'reviews'), reviewData)

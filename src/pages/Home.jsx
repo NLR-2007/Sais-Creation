@@ -29,7 +29,7 @@ import { doc, getDoc, collection, getDocs, query, orderBy, where, limit } from '
 ───────────────────────────────────────────── */
 
 const WHATSAPP_NUMBER = '14083874854'
-const NAV_LINKS = ['Home', 'Gallery', 'Rentals', 'Decors', 'About', 'Contact']
+const NAV_LINKS = ['Home', 'Gallery', 'Rentals', 'Decors', 'Reviews', 'About', 'Contact']
 
 /* ── Shared button recipes ── */
 const BTN_PRIMARY =
@@ -292,7 +292,7 @@ function Navbar({ cartCount, user, isAdmin, onLogout }) {
 
           <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map((link) => {
-              const isPage = link === 'Decors' || link === 'Rentals' || link === 'Gallery'
+              const isPage = link === 'Decors' || link === 'Rentals' || link === 'Gallery' || link === 'Reviews'
               return isPage ? (
                 <Link key={link} to={`/${link.toLowerCase()}`}
                   className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav"
@@ -369,7 +369,7 @@ function Navbar({ cartCount, user, isAdmin, onLogout }) {
             >
               <div className="px-3 py-4 space-y-1">
                 {NAV_LINKS.map((link, i) => {
-                  const isPage = link === 'Decors' || link === 'Rentals' || link === 'Gallery'
+                  const isPage = link === 'Decors' || link === 'Rentals' || link === 'Gallery' || link === 'Reviews'
                   return isPage ? (
                     <motion.div key={link} initial={{ x: -24, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: i * 0.07 }}>
                       <Link to={`/${link.toLowerCase()}`} onClick={() => setMobileOpen(false)}
@@ -1216,7 +1216,7 @@ function Footer({ content = {} }) {
             <h4 className="font-accent font-light text-[11px] tracking-[0.4em] uppercase text-[#D9A5A0] mb-7">Explore</h4>
             <ul className="space-y-3.5">
               {NAV_LINKS.map((link) => {
-                const isPage = link === 'Decors' || link === 'Rentals' || link === 'Gallery'
+                const isPage = link === 'Decors' || link === 'Rentals' || link === 'Gallery' || link === 'Reviews'
                 return (
                   <li key={link}>
                     {isPage ? (
@@ -1301,12 +1301,32 @@ export default function Home() {
       } catch { /* siteContent not available yet */ }
 
       try {
-        const tq = query(collection(db, 'testimonials'), orderBy('createdAt', 'desc'))
-        const tSnap = await getDocs(tq)
-        if (tSnap.size > 0) {
-          setDynamicTestimonials(tSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        const rq = query(collection(db, 'reviews'), orderBy('createdAt', 'desc'))
+        const rSnap = await getDocs(rq)
+        const homeReviews = rSnap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((review) => review.showOnHome === true && review.visible !== false)
+          .map((review) => ({
+            id: review.id,
+            name: review.userName || 'Customer',
+            event: review.productName || (review.categoryType === 'rentals' ? 'Rentals' : review.categoryType === 'decors' ? 'Decor' : 'Celebration'),
+            text: review.comment || '',
+            rating: review.rating || 5,
+          }))
+        if (homeReviews.length > 0) {
+          setDynamicTestimonials(homeReviews)
+        } else {
+          const tq = query(collection(db, 'testimonials'), orderBy('createdAt', 'desc'))
+          const tSnap = await getDocs(tq)
+          if (tSnap.size > 0) setDynamicTestimonials(tSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
         }
-      } catch { /* testimonials not available yet */ }
+      } catch {
+        try {
+          const tq = query(collection(db, 'testimonials'), orderBy('createdAt', 'desc'))
+          const tSnap = await getDocs(tq)
+          if (tSnap.size > 0) setDynamicTestimonials(tSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        } catch { /* testimonials not available yet */ }
+      }
 
       try {
         const pq = query(collection(db, 'products'), where('featured', '==', true), limit(6))

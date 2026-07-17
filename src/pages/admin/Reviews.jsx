@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { addDoc, collection, doc, getDocs, orderBy, query, Timestamp, updateDoc } from 'firebase/firestore'
-import { Eye, EyeOff, MessageSquare, Plus, Star, X } from 'lucide-react'
+import { Eye, EyeOff, Home, LayoutList, MessageSquare, Plus, Star, X } from 'lucide-react'
 import { db } from '../../config/firebase'
 import { useAuth } from '../../context/AuthContext'
 
@@ -17,17 +17,41 @@ export default function Reviews() {
   const [updating, setUpdating] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ productId: '', userName: '', rating: 5, comment: '', date: today() })
+  const [form, setForm] = useState({
+    categoryType: 'decors',
+    productId: '',
+    userName: '',
+    rating: 5,
+    comment: '',
+    date: today(),
+    visible: true,
+    showOnHome: false,
+    showOnReviews: false,
+  })
 
   useEffect(() => {
     async function loadReviews() {
       try {
-        const [reviewSnapshot, productSnapshot] = await Promise.all([
+        const [reviewSnapshot, productSnapshot, categorySnapshot] = await Promise.all([
           getDocs(query(collection(db, 'reviews'), orderBy('createdAt', 'desc'))),
           getDocs(collection(db, 'products')),
+          getDocs(collection(db, 'categories')),
         ])
-        setReviews(reviewSnapshot.docs.map((item) => ({ id: item.id, ...item.data() })))
-        setProducts(productSnapshot.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => (a.name || '').localeCompare(b.name || '')))
+        const categoryItems = categorySnapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
+        const categoryById = new Map(categoryItems.map((item) => [item.id, item]))
+        const productItems = productSnapshot.docs
+          .map((item) => {
+            const data = item.data()
+            const category = categoryById.get(data.categoryId)
+            return { id: item.id, ...data, categoryType: category?.type || data.categoryType || 'decors' }
+          })
+          .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+        setReviews(reviewSnapshot.docs.map((item) => {
+          const data = item.data()
+          const product = productItems.find((p) => p.id === data.productId)
+          return { id: item.id, ...data, categoryType: data.categoryType || product?.categoryType || 'decors' }
+        }))
+        setProducts(productItems)
       } catch (error) {
         alert('Error loading reviews: ' + error.message)
       } finally {
@@ -37,12 +61,12 @@ export default function Reviews() {
     loadReviews()
   }, [])
 
-  const toggleVisibility = async (review) => {
-    const visible = review.visible === false
+  const updateReviewFlag = async (review, field) => {
+    const nextValue = field === 'visible' ? review.visible === false : !Boolean(review[field])
     setUpdating(review.id)
     try {
-      await updateDoc(doc(db, 'reviews', review.id), { visible })
-      setReviews((items) => items.map((item) => item.id === review.id ? { ...item, visible } : item))
+      await updateDoc(doc(db, 'reviews', review.id), { [field]: nextValue })
+      setReviews((items) => items.map((item) => item.id === review.id ? { ...item, [field]: nextValue } : item))
     } catch (error) {
       alert('Error updating review: ' + error.message)
     } finally {
@@ -53,25 +77,28 @@ export default function Reviews() {
   const handleCreate = async (event) => {
     event.preventDefault()
     const product = products.find((item) => item.id === form.productId)
-    if (!product || !form.userName.trim() || !form.comment.trim()) return
+    if (!form.categoryType || !form.userName.trim() || !form.comment.trim()) return
 
     setSaving(true)
     try {
       const reviewData = {
-        productId: product.id,
-        productName: product.name || 'Product',
+        productId: product?.id || '',
+        productName: product?.name || '',
+        categoryType: product?.categoryType || form.categoryType,
         userId: user?.uid || 'admin',
         userName: form.userName.trim(),
         rating: form.rating,
         comment: form.comment.trim(),
         photos: [],
-        visible: true,
+        visible: Boolean(form.visible),
+        showOnHome: Boolean(form.showOnHome),
+        showOnReviews: Boolean(form.showOnReviews),
         adminCreated: true,
         createdAt: Timestamp.fromDate(new Date(`${form.date}T12:00:00`)),
       }
       const created = await addDoc(collection(db, 'reviews'), reviewData)
       setReviews((items) => [{ id: created.id, ...reviewData }, ...items])
-      setForm({ productId: '', userName: '', rating: 5, comment: '', date: today() })
+      setForm({ categoryType: 'decors', productId: '', userName: '', rating: 5, comment: '', date: today(), visible: true, showOnHome: false, showOnReviews: false })
       setFormOpen(false)
     } catch (error) {
       alert('Error creating review: ' + error.message)
@@ -89,7 +116,7 @@ export default function Reviews() {
           </div>
           <div>
             <h1 className="font-display text-2xl md:text-3xl font-semibold text-[#2B2118]">Customer Reviews</h1>
-            <p className="font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F]">Create reviews and choose which appear publicly</p>
+            <p className="font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F]">Create reviews and choose each publishing destination</p>
           </div>
         </div>
         <button onClick={() => setFormOpen((open) => !open)} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] px-6 py-3 font-accent text-[10px] font-medium tracking-[0.18em] uppercase text-white shadow-[0_8px_22px_-8px_rgba(123,45,67,0.55)]">
@@ -103,10 +130,20 @@ export default function Reviews() {
           <h2 className="font-display text-xl font-semibold text-[#2B2118] mb-6">Write a Review</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#2B2118]/60 block mb-2">Product *</label>
-              <select required value={form.productId} onChange={(event) => setForm({ ...form, productId: event.target.value })} className="lux-field !pl-5">
-                <option value="">Select a product</option>
-                {products.map((product) => <option key={product.id} value={product.id}>{product.name || 'Unnamed product'}</option>)}
+              <label className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#2B2118]/60 block mb-2">Review Category *</label>
+              <select required value={form.categoryType} onChange={(event) => setForm({ ...form, categoryType: event.target.value, productId: '' })} className="lux-field !pl-5">
+                <option value="decors">Decor</option>
+                <option value="rentals">Rentals</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#2B2118]/60 block mb-2">Product</label>
+              <select value={form.productId} onChange={(event) => setForm({ ...form, productId: event.target.value })} className="lux-field !pl-5">
+                <option value="">General category review</option>
+                {products
+                  .filter((product) => !form.categoryType || product.categoryType === form.categoryType)
+                  .map((product) => <option key={product.id} value={product.id}>{product.name || 'Unnamed product'}</option>)}
               </select>
             </div>
             <div>
@@ -131,6 +168,18 @@ export default function Reviews() {
               <label className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#2B2118]/60 block mb-2">Comment *</label>
               <textarea required rows={4} value={form.comment} onChange={(event) => setForm({ ...form, comment: event.target.value })} className="lux-field" placeholder="Write the review comment" />
             </div>
+            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                ['visible', 'Show on product page'],
+                ['showOnHome', 'Show on home screen'],
+                ['showOnReviews', 'Show on reviews page'],
+              ].map(([field, label]) => (
+                <label key={field} className="flex items-center gap-3 rounded-2xl border border-[#B07D3F]/15 bg-[#FBF7F0] px-4 py-3 font-body text-[13px] text-[#2B2118]/70">
+                  <input type="checkbox" checked={form[field]} onChange={(event) => setForm({ ...form, [field]: event.target.checked })} className="h-4 w-4 accent-[#7B2D43]" />
+                  {label}
+                </label>
+              ))}
+            </div>
           </div>
           <button disabled={saving} type="submit" className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] px-8 py-3.5 font-accent text-[10px] font-medium tracking-[0.18em] uppercase text-white disabled:opacity-50">
             {saving ? 'Publishing...' : 'Publish Review'}
@@ -149,6 +198,7 @@ export default function Reviews() {
         <div className="space-y-4">
           {reviews.map((review) => {
             const visible = review.visible !== false
+            const categoryLabel = review.categoryType === 'rentals' ? 'Rentals' : review.categoryType === 'decors' ? 'Decor' : 'Other'
             return (
               <article key={review.id} className={`bg-white rounded-[1.25rem] border p-5 shadow-[var(--shadow-sm)] ${visible ? 'border-[#B07D3F]/15' : 'border-[#2B2118]/10 opacity-70'}`}>
                 <div className="flex flex-col sm:flex-row sm:items-start gap-4">
@@ -158,7 +208,10 @@ export default function Reviews() {
                       <div className="flex gap-0.5" aria-label={`${review.rating || 0} out of 5 stars`}>
                         {[1, 2, 3, 4, 5].map((star) => <Star key={star} className={`w-3.5 h-3.5 ${star <= (review.rating || 0) ? 'fill-[#B07D3F] text-[#B07D3F]' : 'text-[#B07D3F]/20'}`} />)}
                       </div>
-                      <span className={`rounded-full px-2.5 py-1 font-accent text-[9px] tracking-[0.15em] uppercase ${visible ? 'bg-green-50 text-green-700' : 'bg-[#2B2118]/5 text-[#2B2118]/50'}`}>{visible ? 'Displayed' : 'Hidden'}</span>
+                      <span className="rounded-full bg-[#B07D3F]/10 px-2.5 py-1 font-accent text-[9px] tracking-[0.15em] uppercase text-[#7B2D43]">{categoryLabel}</span>
+                      <span className={`rounded-full px-2.5 py-1 font-accent text-[9px] tracking-[0.15em] uppercase ${visible ? 'bg-green-50 text-green-700' : 'bg-[#2B2118]/5 text-[#2B2118]/50'}`}>{visible ? 'Product page' : 'Product hidden'}</span>
+                      {review.showOnHome && <span className="rounded-full bg-[#7B2D43]/10 px-2.5 py-1 font-accent text-[9px] tracking-[0.15em] uppercase text-[#7B2D43]">Home</span>}
+                      {review.showOnReviews && <span className="rounded-full bg-[#B07D3F]/10 px-2.5 py-1 font-accent text-[9px] tracking-[0.15em] uppercase text-[#8C5A2B]">Reviews page</span>}
                     </div>
                     <p className="font-body text-[14px] leading-relaxed text-[#2B2118]/65">{review.comment || 'No written comment'}</p>
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-accent text-[10px] tracking-[0.15em] uppercase text-[#B07D3F]">
@@ -166,10 +219,20 @@ export default function Reviews() {
                       {review.createdAt?.toDate && <span>{review.createdAt.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>}
                     </div>
                   </div>
-                  <button onClick={() => toggleVisibility(review)} disabled={updating === review.id} className="inline-flex items-center justify-center gap-2 rounded-full border border-[#7B2D43]/20 px-5 py-2.5 font-accent text-[10px] tracking-[0.15em] uppercase text-[#7B2D43] hover:bg-[#7B2D43]/5 disabled:opacity-50 transition-colors">
-                    {visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    {updating === review.id ? 'Saving...' : visible ? 'Hide review' : 'Display review'}
-                  </button>
+                  <div className="flex flex-col gap-2 sm:w-52">
+                    <button onClick={() => updateReviewFlag(review, 'visible')} disabled={updating === review.id} className="inline-flex items-center justify-center gap-2 rounded-full border border-[#7B2D43]/20 px-5 py-2.5 font-accent text-[10px] tracking-[0.15em] uppercase text-[#7B2D43] hover:bg-[#7B2D43]/5 disabled:opacity-50 transition-colors">
+                      {visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {updating === review.id ? 'Saving...' : visible ? 'Hide product' : 'Show product'}
+                    </button>
+                    <button onClick={() => updateReviewFlag(review, 'showOnHome')} disabled={updating === review.id} className="inline-flex items-center justify-center gap-2 rounded-full border border-[#7B2D43]/20 px-5 py-2.5 font-accent text-[10px] tracking-[0.15em] uppercase text-[#7B2D43] hover:bg-[#7B2D43]/5 disabled:opacity-50 transition-colors">
+                      <Home className="w-4 h-4" />
+                      {review.showOnHome ? 'Remove home' : 'Add home'}
+                    </button>
+                    <button onClick={() => updateReviewFlag(review, 'showOnReviews')} disabled={updating === review.id} className="inline-flex items-center justify-center gap-2 rounded-full border border-[#7B2D43]/20 px-5 py-2.5 font-accent text-[10px] tracking-[0.15em] uppercase text-[#7B2D43] hover:bg-[#7B2D43]/5 disabled:opacity-50 transition-colors">
+                      <LayoutList className="w-4 h-4" />
+                      {review.showOnReviews ? 'Remove page' : 'Add page'}
+                    </button>
+                  </div>
                 </div>
               </article>
             )

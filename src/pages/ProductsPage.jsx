@@ -83,6 +83,9 @@ function Navbar({ user, isAdmin, onLogout, pageType, cartCount }) {
               Decors
               {pageType === 'decors' && <span className="absolute left-1/2 -translate-x-1/2 bottom-0.5 w-1 h-1 rounded-full bg-[#7B2D43]" />}
             </Link>
+            <Link to="/reviews" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav">
+              Reviews
+            </Link>
             <a href="/#about" className="relative font-accent font-light text-[12px] tracking-[0.25em] uppercase text-[#2B2118]/65 hover:text-[#7B2D43] px-4 py-2 rounded-full hover:bg-[#7B2D43]/[0.05] transition-all duration-300 group/nav">
               About
             </a>
@@ -146,6 +149,9 @@ function Navbar({ user, isAdmin, onLogout, pageType, cartCount }) {
                 </Link>
                 <Link to="/decors" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
                   Decors <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
+                </Link>
+                <Link to="/reviews" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
+                  Reviews <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />
                 </Link>
                 <a href="/#about" onClick={() => setMobileOpen(false)} className="flex items-center justify-between font-accent font-light text-[13px] tracking-[0.25em] uppercase text-[#2B2118]/70 hover:text-[#7B2D43] px-5 py-3.5 rounded-2xl hover:bg-[#F3EADC]/70 transition-all duration-300">
                   About <ArrowRight className="w-3.5 h-3.5 text-[#B07D3F]/60" />

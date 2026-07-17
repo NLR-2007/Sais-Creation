@@ -12,6 +12,7 @@ const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const GalleryPage = lazy(() => import('./pages/GalleryPage'))
+const ReviewsPage = lazy(() => import('./pages/ReviewsPage'))
 const CartPage = lazy(() => import('./pages/CartPage'))
 const QuotePage = lazy(() => import('./pages/QuotePage'))
 const ProductDetail = lazy(() => import('./pages/ProductDetail'))
@@ -49,6 +50,7 @@ function App() {
               <Route path="/decors" element={<ProductsPage pageType="decors" />} />
               <Route path="/rentals" element={<ProductsPage pageType="rentals" />} />
               <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/reviews" element={<ReviewsPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/quote" element={<QuotePage />} />
               <Route path="/product/:id" element={<ProductDetail />} />
