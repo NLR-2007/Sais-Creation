@@ -33,6 +33,8 @@ function Navbar({ user, isAdmin, onLogout, cartCount }) {
     ['Rentals', '/rentals'],
     ['Decors', '/decors'],
     ['Reviews', '/reviews'],
+    ['About', '/#about'],
+    ['Contact', '/#contact'],
   ]
 
   return (
