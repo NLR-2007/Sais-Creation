@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 import { Link, useNavigate } from 'react-router-dom'
 import SEO from '../components/SEO'
+import { getHomeGalleryImages } from '../utils/sortGallery'
 import {
   Menu, X, MessageCircle, Star, ChevronLeft, ChevronRight,
   PartyPopper, Sparkles, Flower2, Lamp, Phone,
@@ -1337,10 +1338,11 @@ export default function Home() {
       } catch { /* featured products not available yet */ }
 
       try {
-        const gq = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'), limit(9))
+        const gq = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'))
         const gSnap = await getDocs(gq)
         if (gSnap.size > 0) {
-          setGalleryImages(gSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+          const galleryItems = gSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+          setGalleryImages(getHomeGalleryImages(galleryItems, 9))
         }
       } catch { /* gallery not available yet */ }
     }

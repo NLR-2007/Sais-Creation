@@ -3,12 +3,12 @@ import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import SEO from '../components/SEO'
 import { db } from '../config/firebase'
-import { collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { addDoc, collection, getDocs, orderBy, query, serverTimestamp } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import {
   ArrowLeft, Gem, Home, LogIn, LogOut, Menu, MessageSquare, Shield, ShoppingCart,
-  Sparkles, Star, X,
+  CheckCircle2, Send, Sparkles, Star, X,
 } from 'lucide-react'
 
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -146,7 +146,17 @@ export default function ReviewsPage() {
   const { cartCount } = useCart()
   const navigate = useNavigate()
   const [reviews, setReviews] = useState([])
+  const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [reviewForm, setReviewForm] = useState({
+    categoryType: 'decors',
+    productId: '',
+    userName: '',
+    rating: 5,
+    comment: '',
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -164,6 +174,8 @@ export default function ReviewsPage() {
           const category = categoryById.get(data.categoryId)
           return [item.id, { id: item.id, ...data, categoryType: category?.type || data.categoryType || 'decors' }]
         }))
+        const productItems = Array.from(productById.values())
+          .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
         const visibleReviews = reviewSnapshot.docs
           .map((item) => {
             const data = item.data()
@@ -176,7 +188,10 @@ export default function ReviewsPage() {
             }
           })
           .filter((review) => review.showOnReviews === true && review.visible !== false)
-        if (!cancelled) setReviews(visibleReviews)
+        if (!cancelled) {
+          setReviews(visibleReviews)
+          setProducts(productItems)
+        }
       } catch {
         if (!cancelled) setReviews([])
       } finally {
@@ -195,6 +210,40 @@ export default function ReviewsPage() {
   const handleLogout = async () => {
     await logout()
     navigate('/')
+  }
+
+  const availableProducts = products.filter((product) => product.categoryType === reviewForm.categoryType)
+
+  const handleSubmitReview = async (event) => {
+    event.preventDefault()
+    if (!reviewForm.userName.trim() || !reviewForm.comment.trim() || reviewForm.rating < 1) return
+
+    setSubmitting(true)
+    setSubmitted(false)
+    try {
+      const product = products.find((item) => item.id === reviewForm.productId)
+      const reviewData = {
+        productId: product?.id || '',
+        productName: product?.name || '',
+        categoryType: product?.categoryType || reviewForm.categoryType,
+        userId: user?.uid || '',
+        userName: reviewForm.userName.trim(),
+        rating: Number(reviewForm.rating),
+        comment: reviewForm.comment.trim(),
+        photos: [],
+        visible: true,
+        showOnHome: false,
+        showOnReviews: false,
+        createdAt: serverTimestamp(),
+      }
+      await addDoc(collection(db, 'reviews'), reviewData)
+      setReviewForm((current) => ({ ...current, productId: '', userName: '', rating: 5, comment: '' }))
+      setSubmitted(true)
+    } catch (error) {
+      alert('Error submitting review: ' + error.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const sections = [
@@ -240,6 +289,104 @@ export default function ReviewsPage() {
       </section>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <section className="mb-16 rounded-[1.75rem] border border-[#B07D3F]/15 bg-white p-6 md:p-9 shadow-[0_12px_36px_-20px_rgba(59,31,43,0.2)]">
+          <div className="grid lg:grid-cols-[0.7fr_1.3fr] gap-8 lg:gap-12">
+            <div>
+              <p className="font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F]">Share Your Experience</p>
+              <h2 className="font-display text-3xl md:text-4xl font-semibold text-[#2B2118] mt-2">Give Us a Review</h2>
+              <p className="font-body italic text-[15px] leading-relaxed text-[#2B2118]/55 mt-4">
+                Tell us about your decor or rental experience. Your feedback helps future clients plan their celebrations.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmitReview} className="space-y-5">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="font-accent font-light text-[10px] tracking-[0.22em] uppercase text-[#2B2118]/55 block mb-2">Review Type</label>
+                  <select
+                    value={reviewForm.categoryType}
+                    onChange={(event) => setReviewForm((current) => ({ ...current, categoryType: event.target.value, productId: '' }))}
+                    className="lux-field !pl-5"
+                  >
+                    <option value="decors">Decor</option>
+                    <option value="rentals">Rental</option>
+                    <option value="other">Other Experience</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-accent font-light text-[10px] tracking-[0.22em] uppercase text-[#2B2118]/55 block mb-2">Product / Service (optional)</label>
+                  <select
+                    value={reviewForm.productId}
+                    onChange={(event) => setReviewForm((current) => ({ ...current, productId: event.target.value }))}
+                    className="lux-field !pl-5"
+                    disabled={reviewForm.categoryType === 'other'}
+                  >
+                    <option value="">General {reviewForm.categoryType === 'rentals' ? 'rental' : 'decor'} experience</option>
+                    {availableProducts.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-accent font-light text-[10px] tracking-[0.22em] uppercase text-[#2B2118]/55 block mb-2">Your Name *</label>
+                <input
+                  required
+                  type="text"
+                  value={reviewForm.userName}
+                  onChange={(event) => setReviewForm((current) => ({ ...current, userName: event.target.value }))}
+                  placeholder="Your name"
+                  className="lux-field !pl-5"
+                />
+              </div>
+
+              <div>
+                <label className="font-accent font-light text-[10px] tracking-[0.22em] uppercase text-[#2B2118]/55 block mb-2.5">Your Rating *</label>
+                <div className="flex items-center gap-1" aria-label={`${reviewForm.rating} out of 5 stars`}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewForm((current) => ({ ...current, rating: star }))}
+                      aria-label={`Rate ${star} out of 5`}
+                      className="p-1 rounded-full hover:scale-110 transition-transform"
+                    >
+                      <Star className={`w-7 h-7 ${star <= reviewForm.rating ? 'fill-[#B07D3F] text-[#B07D3F]' : 'text-[#B07D3F]/25'}`} strokeWidth={1.5} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="font-accent font-light text-[10px] tracking-[0.22em] uppercase text-[#2B2118]/55 block mb-2">Your Review *</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={reviewForm.comment}
+                  onChange={(event) => setReviewForm((current) => ({ ...current, comment: event.target.value }))}
+                  placeholder="Share your experience..."
+                  className="lux-field !pl-5 !rounded-2xl resize-none"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-accent font-medium text-[11px] tracking-[0.22em] uppercase shadow-[0_10px_28px_-8px_rgba(123,45,67,0.5)] disabled:opacity-55 transition-all"
+                >
+                  {submitting ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+                  {submitting ? 'Submitting...' : 'Submit Review'}
+                </button>
+                {submitted && (
+                  <p className="inline-flex items-center gap-2 font-body text-[14px] text-emerald-700">
+                    <CheckCircle2 className="w-4 h-4" /> Thank you! Your review was submitted for approval.
+                  </p>
+                )}
+              </div>
+            </form>
+          </div>
+        </section>
+
         {loading ? (
           <div className="py-16 text-center font-body text-[#2B2118]/45">Loading reviews...</div>
         ) : reviews.length === 0 ? (

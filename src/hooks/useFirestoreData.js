@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { db } from '../config/firebase'
 import { collection, getDocs, doc, getDoc, orderBy, query } from 'firebase/firestore'
+import { sortGalleryByPortfolioPriority } from '../utils/sortGallery'
 
 export function useProducts(defaultProducts) {
   const [products, setProducts] = useState(defaultProducts)
@@ -36,11 +37,11 @@ export function useGallery(defaultGallery) {
         const q = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'))
         const snap = await getDocs(q)
         if (snap.size > 0) {
-          setGallery(snap.docs.map((d, i) => ({
+          setGallery(sortGalleryByPortfolioPriority(snap.docs.map((d, i) => ({
             id: d.id,
             ...d.data(),
             numId: i + 1,
-          })))
+          }))))
         }
       } catch { /* use defaults */ }
     }

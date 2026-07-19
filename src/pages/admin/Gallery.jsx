@@ -7,7 +7,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import compressImage from '../../utils/compressImage'
 import {
-  Image, Plus, Pencil, Trash2, X, Save, Upload,
+  Image, Plus, Pencil, Trash2, X, Save, Upload, Home,
 } from 'lucide-react'
 
 const fadeUp = {
@@ -15,12 +15,26 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 }
 
+const priorityValue = (value) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : Number.MAX_SAFE_INTEGER
+}
+
+const sortByPortfolioPriority = (items) => [...items].sort((a, b) => {
+  const priorityDifference = priorityValue(a.portfolioPriority) - priorityValue(b.portfolioPriority)
+  if (priorityDifference !== 0) return priorityDifference
+  return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)
+})
+
 export default function Gallery() {
   const [images, setImages] = useState([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [label, setLabel] = useState('')
+  const [portfolioPriority, setPortfolioPriority] = useState('')
+  const [showOnHome, setShowOnHome] = useState(false)
+  const [homePriority, setHomePriority] = useState('')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState('')
   const [saving, setSaving] = useState(false)
@@ -31,7 +45,7 @@ export default function Gallery() {
     try {
       const q = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'))
       const snap = await getDocs(q)
-      setImages(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      setImages(sortByPortfolioPriority(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
     } catch {
       setImages([])
     }
@@ -44,7 +58,7 @@ export default function Gallery() {
       try {
         const q = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'))
         const snap = await getDocs(q)
-        if (!cancelled) setImages(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        if (!cancelled) setImages(sortByPortfolioPriority(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
       } catch {
         if (!cancelled) setImages([])
       }
@@ -56,6 +70,9 @@ export default function Gallery() {
   const openCreate = () => {
     setEditing(null)
     setLabel('')
+    setPortfolioPriority(String(images.length + 1))
+    setShowOnHome(false)
+    setHomePriority('')
     setImageFile(null)
     setImagePreview('')
     setModalOpen(true)
@@ -64,6 +81,9 @@ export default function Gallery() {
   const openEdit = (img) => {
     setEditing(img)
     setLabel(img.label || '')
+    setPortfolioPriority(img.portfolioPriority ? String(img.portfolioPriority) : '')
+    setShowOnHome(img.showOnHome === true)
+    setHomePriority(img.homePriority ? String(img.homePriority) : '')
     setImageFile(null)
     setImagePreview(img.imageUrl || '')
     setModalOpen(true)
@@ -81,7 +101,7 @@ export default function Gallery() {
     if (files.length === 0) return
     setBulkUploading(true)
     try {
-      for (const file of files) {
+      for (const [index, file] of files.entries()) {
         const compressed = await compressImage(file)
         const storageRef = ref(storage, `gallery/${Date.now()}_${compressed.name}`)
         await uploadBytes(storageRef, compressed)
@@ -89,6 +109,9 @@ export default function Gallery() {
         await addDoc(collection(db, 'gallery'), {
           imageUrl,
           label: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
+          portfolioPriority: images.length + index + 1,
+          showOnHome: false,
+          homePriority: null,
           createdAt: serverTimestamp(),
         })
       }
@@ -122,6 +145,9 @@ export default function Gallery() {
       if (editing) {
         await updateDoc(doc(db, 'gallery', editing.id), {
           label: label.trim(),
+          portfolioPriority: portfolioPriority ? Number(portfolioPriority) : null,
+          showOnHome,
+          homePriority: showOnHome && homePriority ? Number(homePriority) : null,
           ...(imageFile ? { imageUrl } : {}),
           updatedAt: serverTimestamp(),
         })
@@ -129,6 +155,9 @@ export default function Gallery() {
         await addDoc(collection(db, 'gallery'), {
           imageUrl,
           label: label.trim(),
+          portfolioPriority: portfolioPriority ? Number(portfolioPriority) : null,
+          showOnHome,
+          homePriority: showOnHome && homePriority ? Number(homePriority) : null,
           createdAt: serverTimestamp(),
         })
       }
@@ -219,6 +248,16 @@ export default function Gallery() {
                   <Image className="w-8 h-8 text-[#B07D3F]/20" strokeWidth={1} />
                 </div>
               )}
+              <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+                <span className="rounded-full bg-white/90 px-2.5 py-1 font-accent text-[9px] tracking-[0.12em] uppercase text-[#7B2D43] shadow-sm">
+                  Portfolio #{img.portfolioPriority || '—'}
+                </span>
+                {img.showOnHome && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#7B2D43]/90 px-2.5 py-1 font-accent text-[9px] tracking-[0.12em] uppercase text-white shadow-sm">
+                    <Home className="w-3 h-3" /> Home #{img.homePriority || '—'}
+                  </span>
+                )}
+              </div>
               {/* Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#2E1822]/85 via-[#2E1822]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400 flex flex-col justify-end p-4">
                 {img.label && (
@@ -279,7 +318,7 @@ export default function Gallery() {
             <motion.div
               initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }}
               transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-[1.75rem] border border-[#B07D3F]/15 shadow-[var(--shadow-lg)] z-50 overflow-hidden"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-[1.75rem] border border-[#B07D3F]/15 shadow-[var(--shadow-lg)] z-50"
             >
               <div className="flex items-center justify-between px-7 py-5 border-b border-[#B07D3F]/10 bg-gradient-to-b from-[#F3EADC]/40 to-transparent">
                 <h3 className="font-display text-xl font-semibold text-[#2B2118]">
@@ -319,6 +358,46 @@ export default function Gallery() {
                     className="lux-field !pl-5"
                   />
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Portfolio Priority</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={portfolioPriority}
+                      onChange={(e) => setPortfolioPriority(e.target.value)}
+                      placeholder="1"
+                      className="lux-field !pl-5"
+                    />
+                    <p className="font-body text-[11px] text-[#2B2118]/40 mt-1.5 ml-1">Lower numbers appear first.</p>
+                  </div>
+                  <div>
+                    <label className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Home Priority</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={homePriority}
+                      onChange={(e) => setHomePriority(e.target.value)}
+                      disabled={!showOnHome}
+                      placeholder="1"
+                      className="lux-field !pl-5 disabled:opacity-45"
+                    />
+                  </div>
+                </div>
+
+                <label className="flex items-center justify-between gap-4 rounded-2xl border border-[#B07D3F]/15 bg-[#FBF7F0] px-5 py-4 cursor-pointer">
+                  <span>
+                    <span className="block font-accent text-[10px] tracking-[0.22em] uppercase text-[#2B2118]/70">Show on Home Page</span>
+                    <span className="block font-body text-[12px] text-[#2B2118]/40 mt-1">Include this photo in the home portfolio section.</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={showOnHome}
+                    onChange={(e) => setShowOnHome(e.target.checked)}
+                    className="w-5 h-5 accent-[#7B2D43]"
+                  />
+                </label>
               </form>
 
               <div className="px-7 py-5 border-t border-[#B07D3F]/10 flex gap-3">

@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import SEO from '../components/SEO'
+import { sortGalleryByPortfolioPriority } from '../utils/sortGallery'
 import { db } from '../config/firebase'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import {
   Sparkles, Menu, X, ArrowRight, ArrowLeft, Image as ImageIcon,
-  LogIn, LogOut, Shield, Gem, Heart, ChevronLeft, ChevronRight, ShoppingCart,
+  LogIn, LogOut, Shield, Gem, ChevronLeft, ChevronRight, ShoppingCart,
 } from 'lucide-react'
 
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -186,7 +187,9 @@ export default function GalleryPage() {
       try {
         const q = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'))
         const snap = await getDocs(q)
-        if (!cancelled) setImages(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        if (!cancelled) {
+          setImages(sortGalleryByPortfolioPriority(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
+        }
       } catch {
         if (!cancelled) setImages([])
       }
