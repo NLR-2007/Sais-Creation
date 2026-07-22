@@ -5,6 +5,7 @@ const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 import { Link, useNavigate } from 'react-router-dom'
 import SEO from '../components/SEO'
 import { getHomeGalleryImages } from '../utils/sortGallery'
+import { sortReviewsByPriority } from '../utils/sortReviews'
 import {
   Menu, X, MessageCircle, Star, ChevronLeft, ChevronRight,
   PartyPopper, Sparkles, Flower2, Lamp, Phone,
@@ -762,7 +763,7 @@ function Gallery({ images = GALLERY_IMAGES }) {
           subtitle="A glimpse into the celebrations we've brought to life across the city"
         />
 
-        <div className="columns-2 md:columns-3 gap-5 space-y-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-5 items-start">
           {images.map((img, i) => {
             const TileIcon = tileIcons[i % tileIcons.length]
             const arch = i % 3 === 1
@@ -774,7 +775,7 @@ function Gallery({ images = GALLERY_IMAGES }) {
                 key={img.id}
                 variants={fadeUp} initial="hidden" whileInView="visible"
                 viewport={{ once: true, margin: '-30px' }} custom={i * 0.4}
-                className={`group relative overflow-hidden break-inside-avoid cursor-pointer ${arch ? 'rounded-t-[7rem] rounded-b-[1.5rem]' : 'rounded-[1.5rem]'} shadow-[0_6px_20px_-8px_rgba(59,31,43,0.18)] hover:shadow-[0_30px_70px_-22px_rgba(59,31,43,0.4)] transition-shadow duration-700`}
+                className={`group relative overflow-hidden cursor-pointer ${arch ? 'rounded-t-[7rem] rounded-b-[1.5rem]' : 'rounded-[1.5rem]'} shadow-[0_6px_20px_-8px_rgba(59,31,43,0.18)] hover:shadow-[0_30px_70px_-22px_rgba(59,31,43,0.4)] transition-shadow duration-700`}
               >
                 <div className={`${hasImage ? 'bg-[#F3EADC]' : `bg-gradient-to-br ${gradient}`} relative transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.07]`}
                   style={{ height }}
@@ -1304,9 +1305,9 @@ export default function Home() {
       try {
         const rq = query(collection(db, 'reviews'), orderBy('createdAt', 'desc'))
         const rSnap = await getDocs(rq)
-        const homeReviews = rSnap.docs
+        const homeReviews = sortReviewsByPriority(rSnap.docs
           .map((d) => ({ id: d.id, ...d.data() }))
-          .filter((review) => review.showOnHome === true && review.visible !== false)
+          .filter((review) => review.showOnHome === true && review.visible !== false))
           .map((review) => ({
             id: review.id,
             name: review.userName || 'Customer',

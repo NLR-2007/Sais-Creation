@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import compressImage from '../utils/compressImage'
+import { sortReviewsByPriority } from '../utils/sortReviews'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import {
@@ -344,14 +345,10 @@ export default function ProductDetail() {
           where('productId', '==', id)
         )
         const snap = await getDocs(q)
-        const visibleReviews = snap.docs
+        const visibleReviews = sortReviewsByPriority(snap.docs
           .map((d) => ({ id: d.id, ...d.data() }))
           .filter((review) => review.visible !== false)
-          .sort((a, b) => {
-            const aTime = a.createdAt?.toMillis?.() || 0
-            const bTime = b.createdAt?.toMillis?.() || 0
-            return bTime - aTime
-          })
+        )
         setReviews(visibleReviews)
       } catch (err) {
         console.error('Error loading reviews:', err)

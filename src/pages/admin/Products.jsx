@@ -240,7 +240,7 @@ export default function Products({ sectionType }) {
         await updateDoc(doc(db, 'products', editing.id), { ...data, updatedAt: serverTimestamp() })
         await setDoc(doc(db, 'productAdminPrices', editing.id), adminPricing, { merge: true })
       } else {
-        const productRef = await addDoc(collection(db, 'products'), { ...data, createdAt: serverTimestamp() })
+        const productRef = await addDoc(collection(db, 'products'), { ...data, adminCreated: true, createdAt: serverTimestamp() })
         await setDoc(doc(db, 'productAdminPrices', productRef.id), {
           ...adminPricing,
           createdAt: serverTimestamp(),

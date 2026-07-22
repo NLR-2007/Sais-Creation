@@ -6,6 +6,8 @@ import { db } from '../config/firebase'
 import { addDoc, collection, getDocs, orderBy, query, serverTimestamp } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
+import { sortReviewsByPriority } from '../utils/sortReviews'
+import { isAdminReviewProduct } from '../utils/reviewProducts'
 import {
   ArrowLeft, Gem, Home, LogIn, LogOut, Menu, MessageSquare, Shield, ShoppingCart,
   CheckCircle2, Send, Sparkles, Star, X,
@@ -175,8 +177,9 @@ export default function ReviewsPage() {
           return [item.id, { id: item.id, ...data, categoryType: category?.type || data.categoryType || 'decors' }]
         }))
         const productItems = Array.from(productById.values())
+          .filter(isAdminReviewProduct)
           .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-        const visibleReviews = reviewSnapshot.docs
+        const visibleReviews = sortReviewsByPriority(reviewSnapshot.docs
           .map((item) => {
             const data = item.data()
             const product = productById.get(data.productId)
@@ -187,7 +190,7 @@ export default function ReviewsPage() {
               categoryType: data.categoryType || product?.categoryType || 'decors',
             }
           })
-          .filter((review) => review.showOnReviews === true && review.visible !== false)
+          .filter((review) => review.showOnReviews === true && review.visible !== false))
         if (!cancelled) {
           setReviews(visibleReviews)
           setProducts(productItems)

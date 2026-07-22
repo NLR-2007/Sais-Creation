@@ -26,6 +26,12 @@ const sortByPortfolioPriority = (items) => [...items].sort((a, b) => {
   return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)
 })
 
+const nextPriority = (items, field, predicate = () => true) => items.reduce((highest, item) => {
+  if (!predicate(item)) return highest
+  const value = Number(item[field])
+  return Number.isInteger(value) && value >= 1 ? Math.max(highest, value) : highest
+}, 0) + 1
+
 export default function Gallery() {
   const [images, setImages] = useState([])
   const [loading, setLoading] = useState(true)
@@ -70,7 +76,7 @@ export default function Gallery() {
   const openCreate = () => {
     setEditing(null)
     setLabel('')
-    setPortfolioPriority(String(images.length + 1))
+    setPortfolioPriority(String(nextPriority(images, 'portfolioPriority')))
     setShowOnHome(false)
     setHomePriority('')
     setImageFile(null)
@@ -109,7 +115,7 @@ export default function Gallery() {
         await addDoc(collection(db, 'gallery'), {
           imageUrl,
           label: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
-          portfolioPriority: images.length + index + 1,
+          portfolioPriority: nextPriority(images, 'portfolioPriority') + index,
           showOnHome: false,
           homePriority: null,
           createdAt: serverTimestamp(),
@@ -125,6 +131,31 @@ export default function Gallery() {
 
   const handleSave = async (e) => {
     e.preventDefault()
+    const parsedPortfolioPriority = Number(portfolioPriority)
+    const parsedHomePriority = Number(homePriority)
+
+    if (!Number.isInteger(parsedPortfolioPriority) || parsedPortfolioPriority < 1) {
+      alert('Portfolio priority must be a whole number greater than 0.')
+      return
+    }
+
+    const portfolioDuplicate = images.find((item) => item.id !== editing?.id && Number(item.portfolioPriority) === parsedPortfolioPriority)
+    if (portfolioDuplicate) {
+      alert(`Portfolio priority ${parsedPortfolioPriority} is already used by "${portfolioDuplicate.label || 'another photo'}". Choose a unique number.`)
+      return
+    }
+
+    if (showOnHome && (!Number.isInteger(parsedHomePriority) || parsedHomePriority < 1)) {
+      alert('Home priority must be a whole number greater than 0 when the photo is shown on the home page.')
+      return
+    }
+
+    const homeDuplicate = showOnHome && images.find((item) => item.id !== editing?.id && item.showOnHome === true && Number(item.homePriority) === parsedHomePriority)
+    if (homeDuplicate) {
+      alert(`Home priority ${parsedHomePriority} is already used by "${homeDuplicate.label || 'another photo'}". Choose a unique number.`)
+      return
+    }
+
     setSaving(true)
     try {
       let imageUrl = editing?.imageUrl || ''
@@ -145,9 +176,9 @@ export default function Gallery() {
       if (editing) {
         await updateDoc(doc(db, 'gallery', editing.id), {
           label: label.trim(),
-          portfolioPriority: portfolioPriority ? Number(portfolioPriority) : null,
+          portfolioPriority: parsedPortfolioPriority,
           showOnHome,
-          homePriority: showOnHome && homePriority ? Number(homePriority) : null,
+          homePriority: showOnHome ? parsedHomePriority : null,
           ...(imageFile ? { imageUrl } : {}),
           updatedAt: serverTimestamp(),
         })
@@ -155,9 +186,9 @@ export default function Gallery() {
         await addDoc(collection(db, 'gallery'), {
           imageUrl,
           label: label.trim(),
-          portfolioPriority: portfolioPriority ? Number(portfolioPriority) : null,
+          portfolioPriority: parsedPortfolioPriority,
           showOnHome,
-          homePriority: showOnHome && homePriority ? Number(homePriority) : null,
+          homePriority: showOnHome ? parsedHomePriority : null,
           createdAt: serverTimestamp(),
         })
       }
@@ -365,6 +396,8 @@ export default function Gallery() {
                     <input
                       type="number"
                       min="1"
+                      step="1"
+                      required
                       value={portfolioPriority}
                       onChange={(e) => setPortfolioPriority(e.target.value)}
                       placeholder="1"
@@ -377,9 +410,11 @@ export default function Gallery() {
                     <input
                       type="number"
                       min="1"
+                      step="1"
                       value={homePriority}
                       onChange={(e) => setHomePriority(e.target.value)}
                       disabled={!showOnHome}
+                      required={showOnHome}
                       placeholder="1"
                       className="lux-field !pl-5 disabled:opacity-45"
                     />
@@ -394,7 +429,13 @@ export default function Gallery() {
                   <input
                     type="checkbox"
                     checked={showOnHome}
-                    onChange={(e) => setShowOnHome(e.target.checked)}
+                    onChange={(e) => {
+                      const checked = e.target.checked
+                      setShowOnHome(checked)
+                      if (checked && !homePriority) {
+                        setHomePriority(String(nextPriority(images, 'homePriority', (item) => item.showOnHome === true)))
+                      }
+                    }}
                     className="w-5 h-5 accent-[#7B2D43]"
                   />
                 </label>

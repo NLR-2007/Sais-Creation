@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { addDoc, collection, doc, getDocs, orderBy, query, Timestamp, updateDoc } from 'firebase/firestore'
-import { Eye, EyeOff, Home, LayoutList, MessageSquare, Plus, Star, X } from 'lucide-react'
+import { Eye, EyeOff, Home, LayoutList, MessageSquare, Plus, Save, Star, Trash2, X } from 'lucide-react'
 import { db } from '../../config/firebase'
 import { useAuth } from '../../context/AuthContext'
+import { nextReviewPriority, sortReviewsByPriority } from '../../utils/sortReviews'
+import { isAdminReviewProduct } from '../../utils/reviewProducts'
 
 const today = () => {
   const date = new Date()
@@ -17,6 +19,8 @@ export default function Reviews() {
   const [updating, setUpdating] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [removingProduct, setRemovingProduct] = useState('')
+  const [priorityDrafts, setPriorityDrafts] = useState({})
   const [form, setForm] = useState({
     categoryType: 'decors',
     productId: '',
@@ -27,6 +31,7 @@ export default function Reviews() {
     visible: true,
     showOnHome: false,
     showOnReviews: false,
+    reviewPriority: '',
   })
 
   useEffect(() => {
@@ -46,12 +51,14 @@ export default function Reviews() {
             return { id: item.id, ...data, categoryType: category?.type || data.categoryType || 'decors' }
           })
           .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-        setReviews(reviewSnapshot.docs.map((item) => {
+        const reviewItems = reviewSnapshot.docs.map((item) => {
           const data = item.data()
           const product = productItems.find((p) => p.id === data.productId)
           return { id: item.id, ...data, categoryType: data.categoryType || product?.categoryType || 'decors' }
-        }))
-        setProducts(productItems)
+        })
+        setReviews(sortReviewsByPriority(reviewItems))
+        setPriorityDrafts(Object.fromEntries(reviewItems.map((item) => [item.id, item.reviewPriority ? String(item.reviewPriority) : ''])))
+        setProducts(productItems.filter(isAdminReviewProduct))
       } catch (error) {
         alert('Error loading reviews: ' + error.message)
       } finally {
@@ -62,7 +69,7 @@ export default function Reviews() {
   }, [])
 
   const updateReviewFlag = async (review, field) => {
-    const nextValue = field === 'visible' ? review.visible === false : !Boolean(review[field])
+    const nextValue = field === 'visible' ? review.visible === false : !review[field]
     setUpdating(review.id)
     try {
       await updateDoc(doc(db, 'reviews', review.id), { [field]: nextValue })
@@ -74,10 +81,59 @@ export default function Reviews() {
     }
   }
 
+  const updateReviewPriority = async (review) => {
+    const priority = Number(priorityDrafts[review.id])
+    if (!Number.isInteger(priority) || priority < 1) {
+      alert('Comment priority must be a whole number greater than 0.')
+      return
+    }
+    const duplicate = reviews.find((item) => item.id !== review.id && Number(item.reviewPriority) === priority)
+    if (duplicate) {
+      alert(`Priority ${priority} is already used by ${duplicate.userName || 'another comment'}. Choose a unique number.`)
+      return
+    }
+
+    setUpdating(review.id)
+    try {
+      await updateDoc(doc(db, 'reviews', review.id), { reviewPriority: priority })
+      setReviews((items) => sortReviewsByPriority(items.map((item) => item.id === review.id ? { ...item, reviewPriority: priority } : item)))
+    } catch (error) {
+      alert('Error updating comment priority: ' + error.message)
+    } finally {
+      setUpdating('')
+    }
+  }
+
+  const removeProductFromReviewDropdown = async () => {
+    const product = products.find((item) => item.id === form.productId)
+    if (!product) return
+    if (!confirm(`Remove "${product.name || 'this product'}" from the review dropdown? The product itself and existing reviews will not be deleted.`)) return
+
+    setRemovingProduct(product.id)
+    try {
+      await updateDoc(doc(db, 'products', product.id), { showInReviewDropdown: false })
+      setProducts((items) => items.filter((item) => item.id !== product.id))
+      setForm((current) => ({ ...current, productId: '' }))
+    } catch (error) {
+      alert('Error removing product from review dropdown: ' + error.message)
+    } finally {
+      setRemovingProduct('')
+    }
+  }
+
   const handleCreate = async (event) => {
     event.preventDefault()
     const product = products.find((item) => item.id === form.productId)
     if (!form.categoryType || !form.userName.trim() || !form.comment.trim()) return
+    const priority = Number(form.reviewPriority)
+    if (!Number.isInteger(priority) || priority < 1) {
+      alert('Comment priority must be a whole number greater than 0.')
+      return
+    }
+    if (reviews.some((item) => Number(item.reviewPriority) === priority)) {
+      alert(`Priority ${priority} is already in use. Choose a unique number.`)
+      return
+    }
 
     setSaving(true)
     try {
@@ -93,12 +149,14 @@ export default function Reviews() {
         visible: Boolean(form.visible),
         showOnHome: Boolean(form.showOnHome),
         showOnReviews: Boolean(form.showOnReviews),
+        reviewPriority: priority,
         adminCreated: true,
         createdAt: Timestamp.fromDate(new Date(`${form.date}T12:00:00`)),
       }
       const created = await addDoc(collection(db, 'reviews'), reviewData)
-      setReviews((items) => [{ id: created.id, ...reviewData }, ...items])
-      setForm({ categoryType: 'decors', productId: '', userName: '', rating: 5, comment: '', date: today(), visible: true, showOnHome: false, showOnReviews: false })
+      setReviews((items) => sortReviewsByPriority([{ id: created.id, ...reviewData }, ...items]))
+      setPriorityDrafts((items) => ({ ...items, [created.id]: String(priority) }))
+      setForm({ categoryType: 'decors', productId: '', userName: '', rating: 5, comment: '', date: today(), visible: true, showOnHome: false, showOnReviews: false, reviewPriority: '' })
       setFormOpen(false)
     } catch (error) {
       alert('Error creating review: ' + error.message)
@@ -119,7 +177,12 @@ export default function Reviews() {
             <p className="font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F]">Create reviews and choose each publishing destination</p>
           </div>
         </div>
-        <button onClick={() => setFormOpen((open) => !open)} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] px-6 py-3 font-accent text-[10px] font-medium tracking-[0.18em] uppercase text-white shadow-[0_8px_22px_-8px_rgba(123,45,67,0.55)]">
+        <button onClick={() => {
+          setFormOpen((open) => {
+            if (!open) setForm((current) => ({ ...current, reviewPriority: String(nextReviewPriority(reviews)) }))
+            return !open
+          })
+        }} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] px-6 py-3 font-accent text-[10px] font-medium tracking-[0.18em] uppercase text-white shadow-[0_8px_22px_-8px_rgba(123,45,67,0.55)]">
           {formOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           {formOpen ? 'Close' : 'Add Review'}
         </button>
@@ -139,12 +202,27 @@ export default function Reviews() {
             </div>
             <div>
               <label className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#2B2118]/60 block mb-2">Product</label>
-              <select value={form.productId} onChange={(event) => setForm({ ...form, productId: event.target.value })} className="lux-field !pl-5">
-                <option value="">General category review</option>
-                {products
-                  .filter((product) => !form.categoryType || product.categoryType === form.categoryType)
-                  .map((product) => <option key={product.id} value={product.id}>{product.name || 'Unnamed product'}</option>)}
-              </select>
+              <div className="flex gap-2">
+                <select value={form.productId} onChange={(event) => setForm({ ...form, productId: event.target.value })} className="lux-field !pl-5 min-w-0">
+                  <option value="">General category review</option>
+                  {products
+                    .filter((product) => !form.categoryType || product.categoryType === form.categoryType)
+                    .map((product) => <option key={product.id} value={product.id}>{product.name || 'Unnamed product'}</option>)}
+                </select>
+                {form.productId && (
+                  <button
+                    type="button"
+                    onClick={removeProductFromReviewDropdown}
+                    disabled={removingProduct === form.productId}
+                    title="Remove selected product from review dropdowns"
+                    aria-label="Remove selected product from review dropdowns"
+                    className="shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <p className="font-body text-[11px] text-[#2B2118]/40 mt-1.5">The delete button removes the selected item only from review dropdowns.</p>
             </div>
             <div>
               <label className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#2B2118]/60 block mb-2">User Name *</label>
@@ -163,6 +241,11 @@ export default function Reviews() {
                   </button>
                 ))}
               </div>
+            </div>
+            <div>
+              <label className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#2B2118]/60 block mb-2">Comment Priority *</label>
+              <input required type="number" min="1" step="1" value={form.reviewPriority} onChange={(event) => setForm({ ...form, reviewPriority: event.target.value })} className="lux-field !pl-5" placeholder="1" />
+              <p className="font-body text-[11px] text-[#2B2118]/40 mt-1.5">Lower numbers show first. Each number must be unique.</p>
             </div>
             <div className="md:col-span-2">
               <label className="font-accent font-light text-[10px] tracking-[0.25em] uppercase text-[#2B2118]/60 block mb-2">Comment *</label>
@@ -212,6 +295,7 @@ export default function Reviews() {
                       <span className={`rounded-full px-2.5 py-1 font-accent text-[9px] tracking-[0.15em] uppercase ${visible ? 'bg-green-50 text-green-700' : 'bg-[#2B2118]/5 text-[#2B2118]/50'}`}>{visible ? 'Product page' : 'Product hidden'}</span>
                       {review.showOnHome && <span className="rounded-full bg-[#7B2D43]/10 px-2.5 py-1 font-accent text-[9px] tracking-[0.15em] uppercase text-[#7B2D43]">Home</span>}
                       {review.showOnReviews && <span className="rounded-full bg-[#B07D3F]/10 px-2.5 py-1 font-accent text-[9px] tracking-[0.15em] uppercase text-[#8C5A2B]">Reviews page</span>}
+                      <span className="rounded-full bg-[#2B2118]/5 px-2.5 py-1 font-accent text-[9px] tracking-[0.15em] uppercase text-[#2B2118]/60">Priority #{review.reviewPriority || 'Last'}</span>
                     </div>
                     <p className="font-body text-[14px] leading-relaxed text-[#2B2118]/65">{review.comment || 'No written comment'}</p>
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-accent text-[10px] tracking-[0.15em] uppercase text-[#B07D3F]">
@@ -220,6 +304,21 @@ export default function Reviews() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 sm:w-52">
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        aria-label={`Priority for ${review.userName || 'comment'}`}
+                        value={priorityDrafts[review.id] ?? ''}
+                        onChange={(event) => setPriorityDrafts((items) => ({ ...items, [review.id]: event.target.value }))}
+                        className="lux-field !h-[40px] !pl-4 min-w-0"
+                        placeholder="Priority"
+                      />
+                      <button onClick={() => updateReviewPriority(review)} disabled={updating === review.id} aria-label="Save priority" className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#7B2D43]/20 text-[#7B2D43] hover:bg-[#7B2D43]/5 disabled:opacity-50">
+                        <Save className="w-4 h-4" />
+                      </button>
+                    </div>
                     <button onClick={() => updateReviewFlag(review, 'visible')} disabled={updating === review.id} className="inline-flex items-center justify-center gap-2 rounded-full border border-[#7B2D43]/20 px-5 py-2.5 font-accent text-[10px] tracking-[0.15em] uppercase text-[#7B2D43] hover:bg-[#7B2D43]/5 disabled:opacity-50 transition-colors">
                       {visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       {updating === review.id ? 'Saving...' : visible ? 'Hide product' : 'Show product'}
