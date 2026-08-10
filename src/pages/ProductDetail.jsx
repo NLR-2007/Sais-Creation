@@ -10,6 +10,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import compressImage from '../utils/compressImage'
 import { sortReviewsByPriority } from '../utils/sortReviews'
+import { buildProductEnquiry, whatsappUrl } from '../utils/whatsapp'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import {
@@ -18,7 +19,6 @@ import {
   Trash2, User,
 } from 'lucide-react'
 
-const WHATSAPP_NUMBER = '14083874854'
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
 const fadeUp = isMobile
@@ -408,6 +408,18 @@ export default function ProductDetail() {
     return `${product?.id}_style_${item.origIdx}`
   }
 
+  const getStyleName = (styleIdx) => (
+    sortedStyles.length > 1 ? `${product?.name} — Style ${styleIdx + 1}` : product?.name
+  )
+
+  const getEnquiryUrl = (styleIdx, photoUrl) => whatsappUrl(buildProductEnquiry({
+    name: getStyleName(styleIdx),
+    price: getStylePrice(styleIdx),
+    description: getStyleDesc(styleIdx),
+    productId: product?.id || id,
+    imageUrl: photoUrl,
+  }))
+
   const avgRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)
     : 0
@@ -529,7 +541,7 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-[#FBF7F0]">
       <SEO
         title={product ? `${product.name} - Party Decor & Rentals` : 'Product Details'}
-        description={product ? `${product.description || product.name} — available from Sais Creation in San Jose, CA. Custom event decor and rental props.` : 'View product details at Sais Creation.'}
+        description={product ? `${product.description || product.name} — available from Sais Creation in Mountain House, CA. Custom event decor and rental props.` : 'View product details at Sais Creation.'}
         path={`/product/${id}`}
       />
       <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} cartCount={cartCount} />
@@ -721,7 +733,7 @@ export default function ProductDetail() {
                         {styleAdded ? (<><Check className="w-4 h-4" strokeWidth={2} /> Added to Cart</>) : (<><ShoppingCart className="w-4 h-4" strokeWidth={1.6} /> Add to Cart</>)}
                       </button>
                       <a
-                        href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi! I'm interested in "${product.name}"${sortedStyles.length > 1 ? ` (Style ${i + 1})` : ''}. Can you share more details?`)}`}
+                        href={getEnquiryUrl(i, currentPhoto)}
                         target="_blank" rel="noopener noreferrer"
                         className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full border border-[#B07D3F]/20 bg-white font-accent font-light text-[10px] tracking-[0.2em] uppercase text-[#2B2118]/60 hover:border-[#7B2D43]/35 hover:text-[#7B2D43] transition-all duration-300"
                       >

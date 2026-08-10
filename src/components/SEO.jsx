@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async'
 
 const SITE_NAME = 'Sais Creation'
 const BASE_URL = 'https://saiscreation.com'
-const DEFAULT_DESCRIPTION = 'Premium custom event decor and high-quality rental props for weddings, birthdays, baby showers, corporate events & more in San Jose, CA and the Bay Area.'
+const DEFAULT_DESCRIPTION = 'Premium custom event decor and high-quality rental props for weddings, birthdays, baby showers, corporate events & more in Mountain House, CA and the Bay Area.'
 
 export default function SEO({
   title,
@@ -11,7 +11,7 @@ export default function SEO({
   type = 'website',
   noindex = false,
 }) {
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | #1 Party Decor & Rental Services in San Jose, CA`
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | #1 Party Decor & Rental Services in Mountain House, CA`
   const url = `${BASE_URL}${path}`
 
   return (

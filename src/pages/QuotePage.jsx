@@ -7,10 +7,15 @@ import { db } from '../config/firebase'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import {
   Sparkles, ArrowLeft, Send, Package, User, Phone, CheckCircle,
-  MessageCircle,
+  MessageCircle, Calendar,
 } from 'lucide-react'
+import { productUrl, whatsappUrl as buildWhatsappUrl } from '../utils/whatsapp'
 
-const WHATSAPP_NUMBER = '14083874854'
+// yyyy-mm-dd (date input) → mm/dd/yyyy, the format shown on WhatsApp
+function formatEventDate(value) {
+  const [year, month, day] = value.split('-')
+  return year && month && day ? `${month}/${day}/${year}` : value
+}
 
 function SuccessScreen({ whatsappUrl }) {
   const [countdown, setCountdown] = useState(5)
@@ -78,7 +83,7 @@ function SuccessScreen({ whatsappUrl }) {
 export default function QuotePage() {
   const { cart, clearCart } = useCart()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ name: '', phone: '' })
+  const [form, setForm] = useState({ name: '', phone: '', eventDate: '' })
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(null)
 
@@ -93,22 +98,34 @@ export default function QuotePage() {
       await addDoc(collection(db, 'orders'), {
         customerName: form.name.trim(),
         customerPhone: form.phone.trim(),
+        eventDate: form.eventDate || '',
         items: cart.map((item) => ({
           id: item.id,
           productId: item.productId || item.id,
           styleIndex: item.styleIndex ?? null,
           name: item.name,
           imageUrl: item.imageUrl || '',
+          price: item.price || '',
         })),
         status: 'new',
         sentVia: 'whatsapp',
         createdAt: serverTimestamp(),
       })
 
-      const itemsList = cart.map((item, i) => `${i + 1}. ${item.name}${item.imageUrl ? `\n${item.imageUrl}` : ''}`).join('\n\n')
-      const message = `Hi Sais Creation! I'd like to get a quote.\n\n*Customer Details:*\nName: ${form.name}\nPhone: ${form.phone}\n\n*Requested Items:*\n${itemsList}\n\nPlease share pricing and availability. Thank you!`
-      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
-      setSuccess({ whatsappUrl })
+      const itemsList = cart.map((item, i) => {
+        const lines = [`${i + 1}. *${item.name}*`]
+        if (item.price) lines.push(`Price: ${item.price}`)
+        if (item.imageUrl) lines.push(`Image: ${item.imageUrl}`)
+        const link = productUrl(item.productId || item.id)
+        if (link) lines.push(`Product link: ${link}`)
+        return lines.join('\n')
+      }).join('\n\n')
+
+      const details = [`Name: ${form.name}`, `Phone: ${form.phone}`]
+      if (form.eventDate) details.push(`Event date: ${formatEventDate(form.eventDate)}`)
+
+      const message = `Hi Sais Creation! I'd like to get a quote.\n\n*Customer Details:*\n${details.join('\n')}\n\n*Requested Items:*\n${itemsList}\n\nPlease share pricing and availability. Thank you!`
+      setSuccess({ whatsappUrl: buildWhatsappUrl(message) })
       clearCart()
     } catch (err) {
       alert('Error submitting quote: ' + err.message)
@@ -139,7 +156,7 @@ export default function QuotePage() {
 
   return (
     <div className="min-h-screen bg-[#FBF7F0]">
-      <SEO title="Request a Quote" description="Get a free, no-obligation quote for party decoration and rental services from Sais Creation in San Jose, CA. Fast response via WhatsApp." path="/quote" noindex />
+      <SEO title="Request a Quote" description="Get a free, no-obligation quote for party decoration and rental services from Sais Creation in Mountain House, CA. Fast response via WhatsApp." path="/quote" noindex />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20">
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="mb-8">
           <Link to="/cart" className="inline-flex items-center gap-2 font-accent font-light text-[11px] tracking-[0.3em] uppercase text-[#7B2D43]/70 hover:text-[#7B2D43] transition-colors duration-300">
@@ -180,6 +197,14 @@ export default function QuotePage() {
               <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />
                 <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+1 (408) 000-0000" required className="w-full bg-[#FBF7F0] border border-[#B07D3F]/15 rounded-xl py-3.5 pl-11 pr-4 font-body text-sm text-[#2B2118] placeholder:text-[#2B2118]/30 outline-none focus:border-[#7B2D43]/40 focus:shadow-[0_0_0_4px_rgba(123,45,67,0.06)] transition-all duration-300" />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-accent font-light text-[10px] tracking-[0.35em] uppercase text-[#2B2118]/60 ml-1 block mb-2">Event Date</label>
+              <div className="relative">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />
+                <input type="date" name="eventDate" value={form.eventDate} onChange={handleChange} className="w-full bg-[#FBF7F0] border border-[#B07D3F]/15 rounded-xl py-3.5 pl-11 pr-4 font-body text-sm text-[#2B2118] placeholder:text-[#2B2118]/30 outline-none focus:border-[#7B2D43]/40 focus:shadow-[0_0_0_4px_rgba(123,45,67,0.06)] transition-all duration-300" />
               </div>
             </div>
 

@@ -1358,8 +1358,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#FBF7F0]">
       <SEO
-        title="#1 Party Decor & Rental Services in San Jose, CA"
-        description="Sais Creations offers premium custom event decor, balloon artistry, stage design, floral arrangements, and party rental props for weddings, birthdays, baby showers & corporate events in San Jose, California and the Bay Area."
+        title="#1 Party Decor & Rental Services in Mountain House, CA"
+        description="Sais Creations offers premium custom event decor, balloon artistry, stage design, floral arrangements, and party rental props for weddings, birthdays, baby showers & corporate events in Mountain House, California and the Bay Area."
         path="/"
       />
       <Navbar cartCount={cartCount} user={user} isAdmin={isAdmin} onLogout={handleLogout} />

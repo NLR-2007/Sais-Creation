@@ -214,7 +214,7 @@ export default function GalleryPage() {
     <div className="min-h-screen bg-[#FBF7F0]">
       <SEO
         title="Event Gallery - Wedding, Birthday & Party Decoration Photos"
-        description="View our portfolio of stunning event decorations: wedding receptions, birthday parties, baby showers, corporate galas, and more. See real events styled by Sais Creation in San Jose, CA."
+        description="View our portfolio of stunning event decorations: wedding receptions, birthday parties, baby showers, corporate galas, and more. See real events styled by Sais Creation in Mountain House, CA."
         path="/gallery"
       />
       <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} cartCount={cartCount} />

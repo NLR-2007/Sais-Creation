@@ -316,7 +316,7 @@ export default function ProductsPage({ pageType }) {
     <div className="min-h-screen bg-[#FBF7F0]">
       <SEO
         title={pageType === 'decors' ? 'Event Decoration Services - Wedding, Birthday & Party Decor' : pageType === 'rentals' ? 'Party Rental Equipment - Chairs, Tables, Tents & Sound Systems' : 'All Products - Decor & Rental Collection'}
-        description={pageType === 'decors' ? 'Browse our premium event decoration collection: balloon artistry, stage backdrops, floral arrangements, and custom decor for weddings, birthdays, baby showers & corporate events in San Jose, CA.' : pageType === 'rentals' ? 'Rent high-quality party equipment in San Jose: chairs, tables, tents, canopies, lighting, sound systems, and stage setups. Delivery, setup & pickup included.' : 'Explore our complete collection of premium party decorations and rental equipment for events in San Jose, CA and the Bay Area.'}
+        description={pageType === 'decors' ? 'Browse our premium event decoration collection: balloon artistry, stage backdrops, floral arrangements, and custom decor for weddings, birthdays, baby showers & corporate events in Mountain House, CA.' : pageType === 'rentals' ? 'Rent high-quality party equipment in Mountain House: chairs, tables, tents, canopies, lighting, sound systems, and stage setups. Delivery, setup & pickup included.' : 'Explore our complete collection of premium party decorations and rental equipment for events in Mountain House, CA and the Bay Area.'}
         path={pageType ? `/${pageType}` : '/products'}
       />
       <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} pageType={pageType} cartCount={cartCount} />

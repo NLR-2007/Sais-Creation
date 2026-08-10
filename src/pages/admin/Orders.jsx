@@ -4,7 +4,7 @@ import { db } from '../../config/firebase'
 import { collection, getDocs, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore'
 import {
   ClipboardList, Eye, Trash2, X, Package, User, Mail, Phone, MapPin,
-  CheckCircle, Clock, MessageSquare, Archive, MessageCircle,
+  CheckCircle, Clock, MessageSquare, Archive, MessageCircle, Calendar,
 } from 'lucide-react'
 
 const fadeUp = {
@@ -237,6 +237,7 @@ export default function Orders() {
                     <p className="flex items-center gap-2 font-body text-sm text-[#2B2118]"><Phone className="w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />{viewOrder.customerPhone}</p>
                     {viewOrder.customerEmail && <p className="flex items-center gap-2 font-body text-sm text-[#2B2118]"><Mail className="w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />{viewOrder.customerEmail}</p>}
                     {viewOrder.customerAddress && <p className="flex items-start gap-2 font-body text-sm text-[#2B2118]"><MapPin className="w-4 h-4 text-[#B07D3F]/50 shrink-0 mt-0.5" strokeWidth={1.5} />{viewOrder.customerAddress}</p>}
+                    {viewOrder.eventDate && <p className="flex items-center gap-2 font-body text-sm text-[#2B2118]"><Calendar className="w-4 h-4 text-[#B07D3F]/50" strokeWidth={1.5} />Event date: {viewOrder.eventDate}</p>}
                     {viewOrder.sentVia && (
                       <p className="flex items-center gap-2 font-body text-sm text-[#2B2118]">
                         {viewOrder.sentVia === 'registration' ? <User className="w-4 h-4 text-rose-400" strokeWidth={1.5} /> : viewOrder.sentVia === 'email' ? <Mail className="w-4 h-4 text-violet-400" strokeWidth={1.5} /> : <MessageCircle className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />}
