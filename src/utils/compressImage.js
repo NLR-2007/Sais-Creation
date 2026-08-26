@@ -7,11 +7,16 @@
 // photo. We now check what the encoder actually produced and re-encode until the
 // blob fits a byte budget.
 
-const MAX_DIMENSION = 1600
-const TARGET_BYTES = 250_000
-const HARD_CAP_BYTES = 600_000
-const MIN_QUALITY = 0.45
-const START_QUALITY = 0.82
+// Quality is deliberately generous: the saving comes from re-encoding to WebP, not
+// from shrinking the picture. A phone photo keeps its detail and still lands around
+// a tenth of its original weight. Only genuinely huge photos get resized at all.
+const MAX_DIMENSION = 2000
+const TARGET_BYTES = 450_000
+const HARD_CAP_BYTES = 700_000
+const MIN_QUALITY = 0.75
+const START_QUALITY = 0.92
+
+const HEIC_PATTERN = /\.(heic|heif)$/i
 
 let supportedType
 
@@ -75,24 +80,50 @@ function renameTo(name, type) {
   return name.replace(/\.[^.]+$/, '') + (EXTENSIONS[type] || '.jpg')
 }
 
+// iPhones shoot HEIC. iOS Safari usually converts to JPEG on upload, but a HEIC that
+// reaches us from a Mac, a file transfer or another browser cannot be decoded by any
+// canvas — it would sail through uncompressed at 3-5 MB. The converter is imported
+// only when one actually turns up, so it costs nothing on a normal upload.
+async function decodeHeic(file) {
+  const { default: heic2any } = await import('heic2any')
+  const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.94 })
+  const blob = Array.isArray(converted) ? converted[0] : converted
+  return new File([blob], file.name.replace(HEIC_PATTERN, '.jpg'), { type: 'image/jpeg' })
+}
+
+function isHeic(file) {
+  return /image\/hei[cf]/i.test(file.type || '') || HEIC_PATTERN.test(file.name || '')
+}
+
 export default async function compressImage(file) {
-  if (!file?.type?.startsWith('image/')) return file
+  if (!file) return file
+
+  let source = file
+  if (isHeic(file)) {
+    try {
+      source = await decodeHeic(file)
+    } catch {
+      return file // better an oversized upload than a lost photo
+    }
+  }
+
+  if (!source.type?.startsWith('image/')) return source
 
   let img
   try {
-    img = await loadImage(file)
+    img = await loadImage(source)
   } catch {
-    // HEIC and other formats the browser cannot decode — upload untouched rather
-    // than losing the photo. Storage still gets the right content type.
-    return file
+    // A format this browser cannot decode — upload it untouched rather than
+    // losing the photo entirely.
+    return source
   }
 
   const type = bestSupportedType()
   let { width, height } = scaleToFit(img.naturalWidth, img.naturalHeight, MAX_DIMENSION)
 
   // Already small enough and within bounds: don't re-encode and lose quality.
-  if (width === img.naturalWidth && height === img.naturalHeight && file.size <= TARGET_BYTES) {
-    return file
+  if (width === img.naturalWidth && height === img.naturalHeight && source.size <= TARGET_BYTES) {
+    return source
   }
 
   let blob = null
@@ -101,11 +132,11 @@ export default async function compressImage(file) {
   // Drop quality first, then dimensions, until the photo fits the budget.
   for (let attempt = 0; attempt < 6; attempt += 1) {
     blob = await toBlob(draw(img, width, height), type, quality)
-    if (!blob) return file
+    if (!blob) return source
     if (blob.size <= TARGET_BYTES) break
 
     if (quality > MIN_QUALITY) {
-      quality = Math.max(MIN_QUALITY, quality - 0.12)
+      quality = Math.max(MIN_QUALITY, quality - 0.05)
     } else {
       const next = scaleToFit(width, height, Math.round(Math.max(width, height) * 0.75))
       width = next.width
@@ -115,7 +146,7 @@ export default async function compressImage(file) {
 
   // If the encoder ignored our type (blob.type tells the truth) or somehow produced
   // something larger than the original, keep whichever file is smaller.
-  if (blob.size >= file.size && file.size <= HARD_CAP_BYTES) return file
+  if (blob.size >= source.size && source.size <= HARD_CAP_BYTES) return source
 
-  return new File([blob], renameTo(file.name, blob.type), { type: blob.type })
+  return new File([blob], renameTo(source.name, blob.type), { type: blob.type })
 }

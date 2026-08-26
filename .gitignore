@@ -32,3 +32,9 @@ dist-ssr
 # Environment
 .env
 .env.*
+
+# Service account keys - never commit these. They grant full project access.
+sc.json
+*-firebase-adminsdk-*.json
+serviceAccount*.json
+*.serviceaccount.json
