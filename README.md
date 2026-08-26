@@ -126,9 +126,14 @@ same path and download token, so URLs already stored in Firestore keep working:
 cd scripts
 npm install
 # PowerShell: $env:GOOGLE_APPLICATION_CREDENTIALS = "C:/path/to/serviceAccount.json"
-node optimize-storage-images.mjs              # dry run
+node optimize-storage-images.mjs --scan       # metadata only, no downloads
 node optimize-storage-images.mjs --apply      # rewrite for real
 ```
+
+The script is idempotent: anything it has already repaired (WebP carrying our cache
+header) is skipped, so re-running it after adding photos only touches the new ones.
+Photos keep their original pixel dimensions unless they exceed 2000px — the saving
+comes from re-encoding to WebP, not from shrinking.
 
 Get the key from Firebase console → Project settings → Service accounts → Generate new
 private key. Run the dry run first, then `--apply --limit 20` as a trial batch.

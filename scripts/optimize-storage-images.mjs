@@ -114,77 +114,104 @@ async function scan() {
   console.log(`Over 1.5 MB:       ${buckets.huge}   <- will be re-encoded`)
 }
 
-async function run() {
-  let scanned = 0
-  let rewritten = 0
-  let metadataOnly = 0
-  let saved = 0
-  let failed = 0
+// Each image is an independent download / encode / upload, so the job is bound by
+// network latency rather than CPU. A small pool of workers cuts a multi-hour run to
+// well under an hour. Re-running is safe: anything already repaired is skipped.
+const CONCURRENCY = 12
 
-  for (const prefix of PREFIXES) {
-    const [files] = await bucket.getFiles({ prefix })
-    console.log('')
-    console.log(`== ${prefix} (${files.filter(isImage).length} images)`)
+async function processFile(file, stats) {
+  const meta = file.metadata
+  const size = Number(meta.size)
+  const token = meta.metadata?.firebaseStorageDownloadTokens
+  const cacheable = meta.cacheControl === CACHE_CONTROL
 
-    for (const file of files) {
-      if (!isImage(file) || rewritten + metadataOnly >= limit) continue
-      scanned += 1
+  // Anything this script has already handled is WebP with our cache header on it.
+  // Without this guard a second run would re-download and re-encode every repaired
+  // file over 400 KB for no benefit.
+  if (cacheable && meta.contentType === 'image/webp') return
 
-      const [meta] = await file.getMetadata()
-      const size = Number(meta.size)
-      const token = meta.metadata?.firebaseStorageDownloadTokens
-      const cacheable = meta.cacheControl === CACHE_CONTROL
-
-      if (size <= REENCODE_ABOVE_BYTES) {
-        // Small enough already — it just needs a cache header.
-        if (cacheable) continue
-        metadataOnly += 1
-        console.log(`cache  ${file.name} (${format(size)})`)
-        if (apply) {
-          await file.setMetadata({ cacheControl: CACHE_CONTROL })
-        }
-        continue
-      }
-
-      try {
-        const [buffer] = await file.download()
-        const { output, resized, width, height, quality } = await reencode(buffer)
-
-        if (!output || output.length >= size) {
-          console.log(`skip   ${file.name} — re-encode was not smaller`)
-          continue
-        }
-
-        rewritten += 1
-        saved += size - output.length
-        const dimensions = resized ? `${width}x${height} -> max ${MAX_DIMENSION}px` : `${width}x${height} kept`
-        console.log(`shrink ${file.name}  ${format(size)} -> ${format(output.length)}  (${dimensions}, q${quality})`)
-
-        if (apply) {
-          await file.save(output, {
-            resumable: false,
-            contentType: 'image/webp',
-            metadata: {
-              cacheControl: CACHE_CONTROL,
-              // Preserving the token keeps the existing ?token=... download URL valid,
-              // so nothing in Firestore has to change.
-              ...(token ? { metadata: { firebaseStorageDownloadTokens: token } } : {}),
-            },
-          })
-        }
-      } catch (err) {
-        failed += 1
-        console.log(`FAIL   ${file.name} — ${err.message}`)
-      }
-    }
+  if (size <= REENCODE_ABOVE_BYTES) {
+    if (cacheable) return // already repaired on an earlier run
+    stats.metadataOnly += 1
+    if (apply) await file.setMetadata({ cacheControl: CACHE_CONTROL })
+    console.log(`cache  ${file.name} (${format(size)})`)
+    return
   }
 
-  console.log('\n──────────────────────────────')
-  console.log(`${apply ? 'Rewritten' : 'Would rewrite'}: ${rewritten} images`)
-  console.log(`${apply ? 'Cache header set' : 'Would set cache header'}: ${metadataOnly} images`)
-  console.log(`Scanned: ${scanned}   Failed: ${failed}`)
-  console.log(`Storage/bandwidth saved: ${format(saved)}`)
-  if (!apply) console.log('\nDry run — nothing was changed. Re-run with --apply.')
+  const [buffer] = await file.download()
+  const { output, resized, width, height, quality } = await reencode(buffer)
+
+  if (!output || output.length >= size) {
+    // Already well compressed. It still needs the cache header, which is the whole
+    // point for a file this size.
+    if (!cacheable) {
+      stats.metadataOnly += 1
+      if (apply) await file.setMetadata({ cacheControl: CACHE_CONTROL })
+    }
+    console.log(`skip   ${file.name} - re-encode was not smaller, cache header set`)
+    return
+  }
+
+  if (apply) {
+    await file.save(output, {
+      resumable: false,
+      contentType: 'image/webp',
+      metadata: {
+        cacheControl: CACHE_CONTROL,
+        // Preserving the token keeps the existing ?token=... URL valid, so nothing
+        // in Firestore has to change.
+        ...(token ? { metadata: { firebaseStorageDownloadTokens: token } } : {}),
+      },
+    })
+  }
+
+  stats.rewritten += 1
+  stats.saved += size - output.length
+  const dimensions = resized ? `${width}x${height} -> max ${MAX_DIMENSION}px` : `${width}x${height} kept`
+  console.log(`shrink ${file.name}  ${format(size)} -> ${format(output.length)}  (${dimensions}, q${quality})`)
+}
+
+async function run() {
+  const stats = { rewritten: 0, metadataOnly: 0, saved: 0, failed: 0 }
+  const started = Date.now()
+  let scanned = 0
+
+  for (const prefix of PREFIXES) {
+    const [all] = await bucket.getFiles({ prefix })
+    const files = all.filter(isImage)
+    console.log('')
+    console.log(`== ${prefix} (${files.length} images)`)
+
+    let next = 0
+    const worker = async () => {
+      while (true) {
+        const index = next
+        next += 1
+        if (index >= files.length) return
+        if (stats.rewritten + stats.metadataOnly >= limit) return
+
+        scanned += 1
+        try {
+          await processFile(files[index], stats)
+        } catch (err) {
+          stats.failed += 1
+          console.log(`FAIL   ${files[index].name} - ${err.message}`)
+        }
+      }
+    }
+
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker))
+  }
+
+  const minutes = ((Date.now() - started) / 60000).toFixed(1)
+  console.log('')
+  console.log('------------------------------')
+  console.log(`${apply ? 'Rewritten' : 'Would rewrite'}: ${stats.rewritten} images`)
+  console.log(`${apply ? 'Cache header set' : 'Would set cache header'}: ${stats.metadataOnly} images`)
+  console.log(`Scanned: ${scanned}   Failed: ${stats.failed}`)
+  console.log(`Storage/bandwidth saved: ${format(stats.saved)}`)
+  console.log(`Elapsed: ${minutes} min`)
+  if (!apply) console.log('Dry run - nothing was changed. Re-run with --apply.')
 }
 
 const main = scanOnly ? scan : run
