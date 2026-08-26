@@ -423,6 +423,36 @@ export default function ProductDetail() {
     ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)
     : 0
 
+  // Product structured data so Google can show price, availability and stars in the
+  // result. aggregateRating is only included when real reviews are on the page, which
+  // is what Google's rich-result policy requires.
+  const priceAmount = String(product?.price || '').match(/\d[\d,]*(?:\.\d+)?/)
+  const productSchema = product ? {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.desc || product.name,
+    ...(product.imageUrl ? { image: product.imageUrl } : {}),
+    brand: { '@type': 'Brand', name: 'Sais Creation' },
+    ...(priceAmount ? {
+      offers: {
+        '@type': 'Offer',
+        price: priceAmount[0].replace(/,/g, ''),
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+        url: `https://decorsbysai.com/product/${id}`,
+        seller: { '@type': 'Organization', name: 'Sais Creation' },
+      },
+    } : {}),
+    ...(reviews.length > 0 ? {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: String(avgRating),
+        reviewCount: String(reviews.length),
+      },
+    } : {}),
+  } : null
+
   const ratingCounts = [5, 4, 3, 2, 1].map((star) => ({
     star,
     count: reviews.filter((r) => r.rating === star).length,
@@ -537,8 +567,11 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-[#FBF7F0]">
       <SEO
         title={product ? `${product.name} - Party Decor & Rentals` : 'Product Details'}
-        description={product ? `${product.description || product.name} — available from Sais Creation in Mountain House, CA. Custom event decor and rental props.` : 'View product details at Sais Creation.'}
+        description={product ? `${product.desc || product.name} — available from Sais Creation in Mountain House, CA. Custom event decor and rental props.` : 'View product details at Sais Creation.'}
         path={`/product/${id}`}
+        type="product"
+        image={product?.imageUrl}
+        jsonLd={productSchema}
       />
       <Navbar user={user} isAdmin={isAdmin} onLogout={handleLogout} cartCount={cartCount} />
 

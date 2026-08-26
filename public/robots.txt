@@ -1,4 +1,13 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://saiscreation.com/sitemap.xml
+# Admin console, the data seeding tool and pages that carry a noindex tag.
+# Listing them here keeps them out of crawl budget as well as the index.
+Disallow: /admin
+Disallow: /seed
+Disallow: /cart
+Disallow: /quote
+Disallow: /login
+Disallow: /register
+
+Sitemap: https://decorsbysai.com/sitemap.xml

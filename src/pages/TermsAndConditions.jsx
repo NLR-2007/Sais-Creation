@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ScrollText } from 'lucide-react'
+import SEO from '../components/SEO'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -59,6 +60,11 @@ export default function TermsAndConditions() {
 
   return (
     <div className="min-h-screen bg-[#FBF7F0]">
+      <SEO
+        title="Terms & Conditions"
+        description="Rental and decor service terms for Sais Creations LLC — reservations, payments, returns, damage policy and cancellations."
+        path="/terms"
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.04 } } }}>
           <motion.div variants={fadeUp} className="mb-8">

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Shield } from 'lucide-react'
+import SEO from '../components/SEO'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -110,6 +111,11 @@ To exercise any of these rights, please contact us using the information provide
 
   return (
     <div className="min-h-screen bg-[#FBF7F0]">
+      <SEO
+        title="Privacy Policy"
+        description="How Sais Creation collects, uses and protects the personal information you share when requesting event decor and party rentals."
+        path="/privacy-policy"
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.08 } } }}>
           <motion.div variants={fadeUp} className="mb-8">
