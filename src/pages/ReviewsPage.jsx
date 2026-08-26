@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import SEO from '../components/SEO'
 import { db } from '../config/firebase'
-import { addDoc, collection, getDocs, orderBy, query, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, orderBy, query, serverTimestamp } from 'firebase/firestore'
+import { cachedDocs } from '../utils/firestoreCache'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { sortReviewsByPriority } from '../utils/sortReviews'
@@ -135,7 +136,7 @@ function ReviewCard({ review, index }) {
       {review.photos?.length > 0 && (
         <div className="flex gap-2 mt-5 flex-wrap">
           {review.photos.slice(0, 4).map((url, photoIndex) => (
-            <img key={url} src={url} alt={`Review photo ${photoIndex + 1}`} className="w-20 h-20 rounded-xl object-contain bg-[#F3EADC] border border-[#B07D3F]/10" loading="lazy" />
+            <img key={url} src={url} alt={`Review photo ${photoIndex + 1}`} className="w-20 h-20 rounded-xl object-contain bg-[#F3EADC] border border-[#B07D3F]/10" loading="lazy" decoding="async" />
           ))}
         </div>
       )}
@@ -160,46 +161,65 @@ export default function ReviewsPage() {
     comment: '',
   })
 
+  // Reviews are small and are what the page renders, so they load on their own.
+  // The product catalogue is over a megabyte and is only needed for the review form
+  // and as a fallback for older reviews with no stored product name — it loads after.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        const [reviewSnapshot, productSnapshot, categorySnapshot] = await Promise.all([
-          getDocs(query(collection(db, 'reviews'), orderBy('createdAt', 'desc'))),
-          getDocs(collection(db, 'products')),
-          getDocs(collection(db, 'categories')),
-        ])
-        const categories = categorySnapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
-        const categoryById = new Map(categories.map((item) => [item.id, item]))
-        const productById = new Map(productSnapshot.docs.map((item) => {
-          const data = item.data()
-          const category = categoryById.get(data.categoryId)
-          return [item.id, { id: item.id, ...data, categoryType: category?.type || data.categoryType || 'decors' }]
-        }))
-        const productItems = Array.from(productById.values())
-          .filter(isAdminReviewProduct)
-          .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-        const visibleReviews = sortReviewsByPriority(reviewSnapshot.docs
-          .map((item) => {
-            const data = item.data()
-            const product = productById.get(data.productId)
-            return {
-              id: item.id,
-              ...data,
-              productName: data.productName || product?.name || '',
-              categoryType: data.categoryType || product?.categoryType || 'decors',
-            }
-          })
-          .filter((review) => review.showOnReviews === true && review.visible !== false))
-        if (!cancelled) {
-          setReviews(visibleReviews)
-          setProducts(productItems)
-        }
+        const items = await cachedDocs('reviews', () => query(collection(db, 'reviews'), orderBy('createdAt', 'desc')))
+        if (cancelled) return
+        setReviews(sortReviewsByPriority(items
+          .map((data) => ({
+            ...data,
+            productName: data.productName || '',
+            // Kept so the catalogue pass below can tell "the review stored a type"
+            // from "we defaulted it", and only fall back to the product's type.
+            storedCategoryType: data.categoryType || '',
+            categoryType: data.categoryType || 'decors',
+          }))
+          .filter((review) => review.showOnReviews === true && review.visible !== false)))
       } catch {
         if (!cancelled) setReviews([])
       } finally {
         if (!cancelled) setLoading(false)
       }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [productItems, categories] = await Promise.all([
+          cachedDocs('products', () => collection(db, 'products')),
+          cachedDocs('categories', () => collection(db, 'categories')),
+        ])
+        if (cancelled) return
+
+        const categoryById = new Map(categories.map((item) => [item.id, item]))
+        const withType = productItems.map((data) => ({
+          ...data,
+          categoryType: categoryById.get(data.categoryId)?.type || data.categoryType || 'decors',
+        }))
+        const productById = new Map(withType.map((item) => [item.id, item]))
+
+        setProducts(withType
+          .filter(isAdminReviewProduct)
+          .sort((a, b) => (a.name || '').localeCompare(b.name || '')))
+
+        setReviews((current) => current.map((review) => {
+          const product = productById.get(review.productId)
+          if (!product) return review
+          return {
+            ...review,
+            productName: review.productName || product.name || '',
+            categoryType: review.storedCategoryType || product.categoryType || review.categoryType,
+          }
+        }))
+      } catch { /* form falls back to an empty product list */ }
     })()
     return () => { cancelled = true }
   }, [])

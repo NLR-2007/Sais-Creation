@@ -4,8 +4,8 @@ import { db, storage } from '../../config/firebase'
 import {
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, query,
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import compressImage from '../../utils/compressImage'
+import { ref, deleteObject } from 'firebase/storage'
+import uploadImage from '../../utils/uploadImage'
 import {
   Image, Plus, Pencil, Trash2, X, Save, Upload, Home,
 } from 'lucide-react'
@@ -108,10 +108,7 @@ export default function Gallery() {
     setBulkUploading(true)
     try {
       for (const [index, file] of files.entries()) {
-        const compressed = await compressImage(file)
-        const storageRef = ref(storage, `gallery/${Date.now()}_${compressed.name}`)
-        await uploadBytes(storageRef, compressed)
-        const imageUrl = await getDownloadURL(storageRef)
+        const imageUrl = await uploadImage(file, 'gallery')
         await addDoc(collection(db, 'gallery'), {
           imageUrl,
           label: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
@@ -161,10 +158,7 @@ export default function Gallery() {
       let imageUrl = editing?.imageUrl || ''
 
       if (imageFile) {
-        const compressed = await compressImage(imageFile)
-        const storageRef = ref(storage, `gallery/${Date.now()}_${compressed.name}`)
-        await uploadBytes(storageRef, compressed)
-        imageUrl = await getDownloadURL(storageRef)
+        imageUrl = await uploadImage(imageFile, 'gallery')
       }
 
       if (!imageUrl && !imageFile) {

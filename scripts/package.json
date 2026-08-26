@@ -1,0 +1,14 @@
+{
+  "name": "sais-creation-scripts",
+  "private": true,
+  "type": "module",
+  "description": "One-off maintenance scripts. Not part of the site build.",
+  "scripts": {
+    "optimize:images": "node optimize-storage-images.mjs",
+    "optimize:images:apply": "node optimize-storage-images.mjs --apply"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "sharp": "^0.33.5"
+  }
+}

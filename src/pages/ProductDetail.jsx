@@ -2,13 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import SEO from '../components/SEO'
-import { db, storage } from '../config/firebase'
+import { db } from '../config/firebase'
 import {
   doc, getDoc, collection, getDocs, addDoc, deleteDoc,
   query, where, serverTimestamp,
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import compressImage from '../utils/compressImage'
+import uploadImage from '../utils/uploadImage'
 import { sortReviewsByPriority } from '../utils/sortReviews'
 import { buildProductEnquiry, whatsappUrl } from '../utils/whatsapp'
 import { useAuth } from '../context/AuthContext'
@@ -271,7 +270,7 @@ function ReviewCard({ review, isOwner, onDelete }) {
               onClick={() => setLightboxImg(url)}
               className="w-20 h-20 rounded-xl overflow-hidden border border-[#B07D3F]/10 hover:border-[#7B2D43]/30 transition-all duration-300 hover:shadow-[0_4px_16px_-4px_rgba(123,45,67,0.25)]"
             >
-              <img src={url} alt="" className="w-full h-full object-contain bg-[#F3EADC]" loading="lazy" />
+              <img src={url} alt="" className="w-full h-full object-contain bg-[#F3EADC]" loading="lazy" decoding="async" />
             </button>
           ))}
         </div>
@@ -457,10 +456,7 @@ export default function ProductDetail() {
       if (newPhotos.length > 0) {
         uploadedUrls = await Promise.all(
           newPhotos.map(async (file) => {
-            const compressed = await compressImage(file)
-            const storageRef = ref(storage, `reviews/${id}/${Date.now()}_${compressed.name}`)
-            await uploadBytes(storageRef, compressed)
-            return getDownloadURL(storageRef)
+            return uploadImage(file, `reviews/${id}`)
           })
         )
       }
@@ -647,7 +643,7 @@ export default function ProductDetail() {
                       src={currentPhoto}
                       alt={`${product.name} - Style ${i + 1}`}
                       className="w-full h-full object-contain transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                      loading="lazy"
+                      loading="lazy" decoding="async"
                     />
                     {sortedStyles.length > 1 && (
                       <span className="absolute top-4 left-4 font-accent font-medium text-[9px] tracking-[0.2em] uppercase bg-white/90 backdrop-blur-sm text-[#2B2118]/70 px-3.5 py-1.5 rounded-full border border-[#B07D3F]/15 shadow-sm">
@@ -695,7 +691,7 @@ export default function ProductDetail() {
                             onClick={() => setStylePhotoIdx(i, tIdx)}
                             className={`w-12 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition-all duration-300 ${tIdx === currentPhotoIdx ? 'border-[#7B2D43] shadow-[0_2px_8px_rgba(123,45,67,0.3)]' : 'border-transparent opacity-60 hover:opacity-100'}`}
                           >
-                            <img src={thumbUrl} alt="" className="w-full h-full object-contain bg-[#F3EADC]" loading="lazy" />
+                            <img src={thumbUrl} alt="" className="w-full h-full object-contain bg-[#F3EADC]" loading="lazy" decoding="async" />
                           </button>
                         ))}
                       </div>
@@ -769,7 +765,7 @@ export default function ProductDetail() {
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
               {customerPhotos.map((photo, i) => (
                 <div key={i} className="relative group aspect-square rounded-xl overflow-hidden border border-[#B07D3F]/10 hover:border-[#7B2D43]/30 transition-all duration-300 cursor-pointer shadow-[0_2px_8px_rgba(59,31,43,0.04)] hover:shadow-[0_8px_24px_-8px_rgba(123,45,67,0.2)]">
-                  <img src={photo.url} alt="" className="w-full h-full object-contain bg-[#F3EADC] group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  <img src={photo.url} alt="" className="w-full h-full object-contain bg-[#F3EADC] group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#2E1822]/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2">
                     <span className="font-accent text-[9px] text-white/80 truncate">{photo.userName}</span>
                   </div>

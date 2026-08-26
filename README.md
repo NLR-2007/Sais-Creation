@@ -91,6 +91,7 @@ The project includes:
 Sais-Creation/
 ├── functions/          # Serverless backend functions
 ├── public/             # Public assets, sitemap and robots.txt
+├── scripts/            # One-off maintenance scripts (not part of the build)
 ├── src/                # React application source code
 ├── firebase.json       # Firebase configuration
 ├── firestore.rules     # Firestore security rules
@@ -99,3 +100,42 @@ Sais-Creation/
 ├── package.json        # Dependencies and scripts
 ├── vercel.json         # Vercel deployment configuration
 └── vite.config.js      # Vite configuration
+```
+
+## Performance Notes
+
+### Image pipeline
+
+Photos are re-encoded in the browser (`src/utils/compressImage.js`) before upload and
+stored through `src/utils/uploadImage.js`, which sets a long-lived `Cache-Control`
+header. Two rules matter here:
+
+- **Never trust `canvas.toBlob(cb, 'image/webp')`.** Safari and some Android WebViews
+  ignore an unsupported type and silently return a PNG. An earlier version renamed the
+  result `.webp` regardless, so phone uploads were stored as 2-3 MB PNGs. The compressor
+  now checks `blob.type` and re-encodes until the file fits a byte budget.
+- **Firebase Storage defaults to `Cache-Control: private, max-age=0`**, so photos are
+  re-downloaded on every page view unless the header is set at upload time.
+
+### Repairing photos uploaded before that fix
+
+`scripts/optimize-storage-images.mjs` rewrites oversized objects in place, keeping the
+same path and download token, so URLs already stored in Firestore keep working:
+
+```bash
+cd scripts
+npm install
+# PowerShell: $env:GOOGLE_APPLICATION_CREDENTIALS = "C:/path/to/serviceAccount.json"
+node optimize-storage-images.mjs              # dry run
+node optimize-storage-images.mjs --apply      # rewrite for real
+```
+
+Get the key from Firebase console → Project settings → Service accounts → Generate new
+private key. Run the dry run first, then `--apply --limit 20` as a trial batch.
+
+### Firestore reads
+
+Public pages read collections through `src/utils/firestoreCache.js`, which keeps results
+in memory for five minutes so moving between the collection, a product and back does not
+refetch the (large) products collection each time. Admin screens deliberately bypass the
+cache and always read live data. Pages sharing a cache key must use the identical query.

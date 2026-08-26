@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import {
-  LayoutDashboard, Package, Image, Users, LogOut,
+  LayoutDashboard, Image, Users, LogOut,
   Menu, X, Sparkles, ChevronLeft, LayoutList, ClipboardList,
   Flower2, Armchair, MessageSquare, FileText,
 } from 'lucide-react'

@@ -4,8 +4,8 @@ import { db, storage } from '../../config/firebase'
 import {
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, serverTimestamp, orderBy, query,
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import compressImage from '../../utils/compressImage'
+import { ref, deleteObject } from 'firebase/storage'
+import uploadImage from '../../utils/uploadImage'
 import {
   Package, Plus, Pencil, Trash2, X, Save, Upload, Search, Tag, Sparkles, ImagePlus,
   Flower2, Armchair,
@@ -173,10 +173,7 @@ export default function Products({ sectionType }) {
     try {
       const urls = await Promise.all(
         files.map(async (file) => {
-          const compressed = await compressImage(file)
-          const storageRef = ref(storage, `products/gallery/${Date.now()}_${compressed.name}`)
-          await uploadBytes(storageRef, compressed)
-          return getDownloadURL(storageRef)
+          return uploadImage(file, 'products/gallery')
         })
       )
       setForm((prev) => {
@@ -207,10 +204,7 @@ export default function Products({ sectionType }) {
       let imageUrl = form.imageUrl
 
       if (imageFile) {
-        const compressed = await compressImage(imageFile)
-        const storageRef = ref(storage, `products/${Date.now()}_${compressed.name}`)
-        await uploadBytes(storageRef, compressed)
-        imageUrl = await getDownloadURL(storageRef)
+        imageUrl = await uploadImage(imageFile, 'products')
       }
 
       const data = {

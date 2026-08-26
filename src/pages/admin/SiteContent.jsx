@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { db, storage } from '../../config/firebase'
 import { doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, orderBy, query } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import compressImage from '../../utils/compressImage'
+import { ref, deleteObject } from 'firebase/storage'
+import uploadImage from '../../utils/uploadImage'
 import {
   FileText, Save, Plus, Pencil, Trash2, X, Star, MessageSquare, Upload, Image as ImageIcon,
 } from 'lucide-react'
@@ -178,10 +178,7 @@ export default function SiteContent() {
       for (const [uploadKey, upload] of uploadEntries) {
         const fieldKey = uploadKey.split('.')[1]
         const previousUrl = nextSectionData[fieldKey]
-        const compressed = await compressImage(upload.file)
-        const storageRef = ref(storage, `site-content/${sectionId}/${Date.now()}_${compressed.name}`)
-        await uploadBytes(storageRef, compressed)
-        nextSectionData[fieldKey] = await getDownloadURL(storageRef)
+        nextSectionData[fieldKey] = await uploadImage(upload.file, `site-content/${sectionId}`)
 
         if (previousUrl) {
           try {

@@ -4,10 +4,10 @@ import { db, storage } from '../../config/firebase'
 import {
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, query,
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import compressImage from '../../utils/compressImage'
+import { ref, deleteObject } from 'firebase/storage'
+import uploadImage from '../../utils/uploadImage'
 import {
-  LayoutList, Plus, Pencil, Trash2, X, Save, Upload, GripVertical,
+  LayoutList, Plus, Pencil, Trash2, X, Save, Upload,
 } from 'lucide-react'
 
 const fadeUp = {
@@ -86,10 +86,7 @@ export default function Categories() {
       let imageUrl = form.imageUrl
 
       if (imageFile) {
-        const compressed = await compressImage(imageFile)
-        const storageRef = ref(storage, `categories/${Date.now()}_${compressed.name}`)
-        await uploadBytes(storageRef, compressed)
-        imageUrl = await getDownloadURL(storageRef)
+        imageUrl = await uploadImage(imageFile, 'categories')
       }
 
       const data = {

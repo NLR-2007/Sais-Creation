@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import SEO from '../components/SEO'
 import { db } from '../config/firebase'
-import { collection, getDocs, query, orderBy } from 'firebase/firestore'
+import { collection } from 'firebase/firestore'
+import { cachedDocs } from '../utils/firestoreCache'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import {
@@ -187,6 +188,14 @@ function Navbar({ user, isAdmin, onLogout, pageType, cartCount }) {
   )
 }
 
+const millis = (value) => value?.toMillis?.() ?? 0
+
+// Sorted here rather than in the query so documents missing the field are still shown,
+// and so the cached collection can be shared with the pages that need a different order.
+const sortByNewest = (items) => [...items].sort((a, b) => millis(b.createdAt) - millis(a.createdAt))
+
+const sortByOrder = (items) => [...items].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0))
+
 function ProductCard({ product, index }) {
   return (
     <motion.div
@@ -200,7 +209,7 @@ function ProductCard({ product, index }) {
               src={product.imageUrl}
               alt={product.name}
               className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-3">
@@ -262,19 +271,14 @@ export default function ProductsPage({ pageType }) {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      try {
-        const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'))
-        const snap = await getDocs(q)
-        if (!cancelled) setAllProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-      } catch {
-        if (!cancelled) setAllProducts([])
-      }
-      try {
-        const cq = query(collection(db, 'categories'), orderBy('order', 'asc'))
-        const csnap = await getDocs(cq)
-        if (!cancelled) setAllCategories(csnap.docs.map((d) => ({ id: d.id, ...d.data() })))
-      } catch { /* no categories yet */ }
-      if (!cancelled) setLoading(false)
+      const [products, categories] = await Promise.all([
+        cachedDocs('products', () => collection(db, 'products')).catch(() => []),
+        cachedDocs('categories', () => collection(db, 'categories')).catch(() => []),
+      ])
+      if (cancelled) return
+      setAllProducts(sortByNewest(products))
+      setAllCategories(sortByOrder(categories))
+      setLoading(false)
     })()
     return () => { cancelled = true }
   }, [])

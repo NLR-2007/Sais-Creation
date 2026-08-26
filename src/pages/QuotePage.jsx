@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import SEO from '../components/SEO'
 import { useCart } from '../context/CartContext'
 import { db } from '../config/firebase'
@@ -82,7 +82,6 @@ function SuccessScreen({ whatsappUrl }) {
 
 export default function QuotePage() {
   const { cart, clearCart } = useCart()
-  const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', phone: '', eventDate: '' })
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(null)

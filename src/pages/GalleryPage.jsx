@@ -4,7 +4,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import SEO from '../components/SEO'
 import { sortGalleryByPortfolioPriority } from '../utils/sortGallery'
 import { db } from '../config/firebase'
-import { collection, getDocs, query, orderBy } from 'firebase/firestore'
+import { collection, query, orderBy } from 'firebase/firestore'
+import { cachedDocs } from '../utils/firestoreCache'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import {
@@ -185,11 +186,8 @@ export default function GalleryPage() {
     let cancelled = false
     ;(async () => {
       try {
-        const q = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'))
-        const snap = await getDocs(q)
-        if (!cancelled) {
-          setImages(sortGalleryByPortfolioPriority(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
-        }
+        const items = await cachedDocs('gallery', () => query(collection(db, 'gallery'), orderBy('createdAt', 'desc')))
+        if (!cancelled) setImages(sortGalleryByPortfolioPriority(items))
       } catch {
         if (!cancelled) setImages([])
       }
@@ -302,7 +300,7 @@ export default function GalleryPage() {
                       src={img.imageUrl}
                       alt={img.label || 'Gallery photo'}
                       className="w-full h-auto object-contain group-hover:scale-[1.04] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                      loading="lazy"
+                      loading="lazy" decoding="async"
                     />
                   ) : (
                     <div className="h-48 bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/50 flex items-center justify-center">

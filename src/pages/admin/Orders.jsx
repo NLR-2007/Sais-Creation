@@ -48,17 +48,6 @@ export default function Orders() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [statusFilter, setStatusFilter] = useState('')
 
-  const fetchOrders = async () => {
-    try {
-      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
-      const snap = await getDocs(q)
-      setOrders(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    } catch {
-      setOrders([])
-    }
-    setLoading(false)
-  }
-
   useEffect(() => {
     let cancelled = false
     ;(async () => {

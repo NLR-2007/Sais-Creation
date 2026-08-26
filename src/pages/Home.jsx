@@ -10,12 +10,13 @@ import {
   Menu, X, MessageCircle, Star, ChevronLeft, ChevronRight,
   PartyPopper, Sparkles, Flower2, Lamp, Phone,
   ArrowRight, Heart, Send, Crown, Gem,
-  MapPin, Clock, CalendarDays, User, LogIn, LogOut, Shield, Eye, ShoppingCart, Check
+  MapPin, Clock, CalendarDays, User, LogIn, LogOut, Shield, ShoppingCart, Check
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { db } from '../config/firebase'
-import { doc, getDoc, collection, getDocs, query, orderBy, where, limit } from 'firebase/firestore'
+import { doc, getDoc, collection, query, orderBy } from 'firebase/firestore'
+import { cachedDocs } from '../utils/firestoreCache'
 
 /* ─────────────────────────────────────────────
    SAIS CREATION — Warm Luxury · Modern Atelier Edition
@@ -111,23 +112,6 @@ function SectionHeading({ eyebrow, title, titleItalic, subtitle, light = false }
   )
 }
 
-/* ─── DATA ─── */
-const SERVICES = [
-  { icon: PartyPopper, title: 'Balloon Artistry', desc: 'Sculpted arches, organic garlands & couture balloon installations' },
-  { icon: Crown, title: 'Royal Stage Design', desc: 'Grand backdrops, silk drapery & themed stage architecture' },
-  { icon: Flower2, title: 'Floral Couture', desc: 'Fresh & faux florals composed with an artist’s eye for romance' },
-  { icon: Lamp, title: 'Lighting & Ambience', desc: 'Fairy-lit canopies, LED walls, neon signatures & golden glow' },
-]
-
-const PRODUCTS = [
-  { id: 1, name: 'Golden Arch Kit', desc: 'Premium balloon arch in metallic gold & ivory tones', price: '₹2,499', tag: 'Bestseller' },
-  { id: 2, name: 'Rose Petal Backdrop', desc: 'Luxurious draped backdrop with cascading rose petals', price: '₹3,999', tag: 'Premium' },
-  { id: 3, name: 'LED Letter Lights', desc: 'Marquee-style 4ft illuminated letters for any occasion', price: '₹1,299', tag: null },
-  { id: 4, name: 'Floral Centerpiece Set', desc: 'Six elegant table centerpieces with mixed blooms', price: '₹4,499', tag: 'New' },
-  { id: 5, name: 'Stage Drape Package', desc: 'Full silk draping with fairy lights & golden swags', price: '₹7,999', tag: 'Premium' },
-  { id: 6, name: 'Custom Neon Signature', desc: 'Bespoke neon sign with your words — the perfect photo moment', price: '₹2,999', tag: null },
-]
-
 const GALLERY_IMAGES = Array.from({ length: 9 }, (_, i) => ({
   id: i + 1,
   height: [300, 380, 330, 350, 310, 400, 320, 360, 300][i],
@@ -160,97 +144,6 @@ const parseEventTypes = (value) => {
   return []
 }
 
-/* ─── PRODUCT ILLUSTRATIONS — bespoke line art per piece ─── */
-function ProductArt({ id }) {
-  const common = { fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }
-  switch (id) {
-    case 1: /* Golden Arch Kit — balloon arch */
-      return (
-        <svg viewBox="0 0 220 150" className="w-full h-full" aria-hidden="true">
-          <path d="M40 138 C40 60 180 60 180 138" stroke="#B07D3F" strokeWidth="1.2" strokeDasharray="2 6" {...common} />
-          {[
-            [40, 130, 11, '#E2BF7E'], [48, 108, 9, '#D9A5A0'], [60, 88, 11, '#FBF7F0'], [78, 73, 9, '#B07D3F'],
-            [99, 65, 11, '#E2BF7E'], [121, 65, 9, '#D9A5A0'], [142, 73, 11, '#FBF7F0'], [160, 88, 9, '#E2BF7E'],
-            [172, 108, 11, '#D9A5A0'], [180, 130, 9, '#B07D3F'],
-          ].map(([cx, cy, r, c], i) => (
-            <g key={i}>
-              <circle cx={cx} cy={cy} r={r} fill={c} opacity="0.85" />
-              <circle cx={cx} cy={cy} r={r} stroke="#7B2D43" strokeOpacity="0.25" strokeWidth="1" fill="none" />
-              <circle cx={cx - r / 3} cy={cy - r / 3} r={r / 4} fill="#FFFFFF" opacity="0.55" />
-            </g>
-          ))}
-          <line x1="28" y1="140" x2="192" y2="140" stroke="#B07D3F" strokeOpacity="0.4" strokeWidth="1.2" />
-        </svg>
-      )
-    case 2: /* Rose Petal Backdrop — drapes & falling petals */
-      return (
-        <svg viewBox="0 0 220 150" className="w-full h-full" aria-hidden="true">
-          <rect x="48" y="22" width="124" height="106" rx="14" fill="#FBF7F0" opacity="0.7" stroke="#B07D3F" strokeOpacity="0.35" strokeWidth="1.2" />
-          <path d="M48 28 Q78 50 110 28 Q142 50 172 28" stroke="#7B2D43" strokeOpacity="0.5" strokeWidth="1.4" {...common} />
-          <path d="M60 24 V120 M110 32 V124 M160 24 V120" stroke="#D9A5A0" strokeOpacity="0.6" strokeWidth="1.2" {...common} />
-          {[[80, 62], [132, 56], [96, 88], [148, 92], [70, 104], [120, 110]].map(([x, y], i) => (
-            <path key={i} d={`M${x} ${y} q4 -7 8 0 q-4 7 -8 0`} fill="#D9A5A0" opacity="0.8" transform={`rotate(${i * 50} ${x} ${y})`} />
-          ))}
-          <circle cx="110" cy="20" r="3.5" fill="#B07D3F" opacity="0.7" />
-        </svg>
-      )
-    case 3: /* LED Letter Lights — marquee letter */
-      return (
-        <svg viewBox="0 0 220 150" className="w-full h-full" aria-hidden="true">
-          <path d="M82 128 L110 28 L138 128 M92 92 H128" stroke="#7B2D43" strokeWidth="9" strokeOpacity="0.18" {...common} />
-          <path d="M82 128 L110 28 L138 128 M92 92 H128" stroke="#B07D3F" strokeWidth="2" {...common} />
-          {[[110, 34], [99, 64], [121, 64], [93, 92], [127, 92], [86, 118], [134, 118]].map(([x, y], i) => (
-            <g key={i}>
-              <circle cx={x} cy={y} r="5.5" fill="#E2BF7E" opacity="0.45" />
-              <circle cx={x} cy={y} r="2.6" fill="#E2BF7E" />
-            </g>
-          ))}
-          <path d="M56 40 l4 0 m-2 -2 l0 4 M168 56 l4 0 m-2 -2 l0 4 M62 102 l4 0 m-2 -2 l0 4" stroke="#D9A5A0" strokeWidth="1.4" {...common} />
-        </svg>
-      )
-    case 4: /* Floral Centerpiece — vase & blooms */
-      return (
-        <svg viewBox="0 0 220 150" className="w-full h-full" aria-hidden="true">
-          <path d="M96 96 h28 l-5 36 h-18 z" fill="#FBF7F0" stroke="#B07D3F" strokeOpacity="0.5" strokeWidth="1.4" />
-          <path d="M110 94 V64 M110 80 Q94 72 88 56 M110 76 Q126 68 134 54 M110 88 Q100 86 96 74 M110 84 Q122 82 126 70" stroke="#7B2D43" strokeOpacity="0.55" strokeWidth="1.4" {...common} />
-          {[[110, 56, '#D9A5A0'], [85, 50, '#E2BF7E'], [137, 48, '#D9A5A0'], [94, 68, '#B07D3F'], [128, 64, '#E2BF7E']].map(([x, y, c], i) => (
-            <g key={i}>
-              {[0, 72, 144, 216, 288].map((a) => (
-                <ellipse key={a} cx={x} cy={Number(y) - 6} rx="4" ry="7" fill={c} opacity="0.8" transform={`rotate(${a} ${x} ${y})`} />
-              ))}
-              <circle cx={x} cy={y} r="3" fill="#7B2D43" opacity="0.7" />
-            </g>
-          ))}
-          <line x1="74" y1="134" x2="146" y2="134" stroke="#B07D3F" strokeOpacity="0.4" strokeWidth="1.2" />
-        </svg>
-      )
-    case 5: /* Stage Drape Package — swags & fairy lights */
-      return (
-        <svg viewBox="0 0 220 150" className="w-full h-full" aria-hidden="true">
-          <path d="M30 26 Q70 70 110 26 Q150 70 190 26" stroke="#7B2D43" strokeOpacity="0.55" strokeWidth="1.6" {...common} />
-          <path d="M30 26 Q70 86 110 26 Q150 86 190 26" stroke="#D9A5A0" strokeOpacity="0.7" strokeWidth="1.3" {...common} />
-          <path d="M38 30 V124 M110 34 V128 M182 30 V124" stroke="#B07D3F" strokeOpacity="0.45" strokeWidth="1.3" {...common} />
-          <path d="M46 124 Q74 96 110 124 Q146 96 174 124" stroke="#D9A5A0" strokeOpacity="0.5" strokeWidth="1.1" strokeDasharray="1 7" {...common} />
-          {[[58, 113], [84, 103], [110, 100], [136, 103], [162, 113]].map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r="2.4" fill="#E2BF7E" />
-          ))}
-          <circle cx="110" cy="26" r="4" fill="#B07D3F" opacity="0.7" />
-        </svg>
-      )
-    default: /* Custom Neon Signature — glowing script */
-      return (
-        <svg viewBox="0 0 220 150" className="w-full h-full" aria-hidden="true">
-          <rect x="34" y="34" width="152" height="82" rx="18" stroke="#B07D3F" strokeOpacity="0.3" strokeWidth="1.2" fill="#FBF7F0" opacity="0.4" />
-          <path d="M56 88 Q66 56 76 88 Q82 64 92 82 Q100 60 112 84 Q118 70 126 84 Q138 56 150 88 Q156 76 166 82"
-            stroke="#7B2D43" strokeWidth="6" strokeOpacity="0.15" {...common} />
-          <path d="M56 88 Q66 56 76 88 Q82 64 92 82 Q100 60 112 84 Q118 70 126 84 Q138 56 150 88 Q156 76 166 82"
-            stroke="#D9A5A0" strokeWidth="2.2" {...common} />
-          <path d="M48 44 l5 0 m-2.5 -2.5 l0 5 M172 100 l5 0 m-2.5 -2.5 l0 5" stroke="#E2BF7E" strokeWidth="1.5" {...common} />
-          <circle cx="178" cy="46" r="2" fill="#D9A5A0" />
-        </svg>
-      )
-  }
-}
 
 /* ─── NAVBAR ─── */
 function Navbar({ cartCount, user, isAdmin, onLogout }) {
@@ -608,134 +501,7 @@ function MarqueeStrip() {
   )
 }
 
-/* ─── SERVICES ─── */
-function Services() {
-  return (
-    <section className="py-24 md:py-36 bg-[#F3EADC] relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-20 bg-gradient-to-b from-[#B07D3F]/50 to-transparent" />
-      {!isMobile && <>
-        <div className="absolute -top-20 -right-24 w-96 h-96 rounded-full bg-[#D9A5A0]/15 blur-[110px]" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-[#E2BF7E]/18 blur-[110px]" />
-      </>}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <SectionHeading
-          eyebrow="The Atelier"
-          title="Our"
-          titleItalic="Signature Services"
-          subtitle="From intimate gatherings to grand celebrations — each event composed like a work of art"
-        />
-
-        <div className="flex md:grid md:grid-cols-4 gap-7 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
-          {SERVICES.map((service, i) => (
-            <motion.div
-              key={service.title}
-              variants={fadeUp} initial="hidden" whileInView="visible"
-              viewport={{ once: true, margin: '-50px' }} custom={i}
-              className="group relative min-w-[270px] md:min-w-0 snap-center bg-gradient-to-b from-white to-[#FBF7F0] p-9 pt-10 rounded-[1.75rem] border border-[#B07D3F]/15 shadow-[0_4px_16px_rgba(59,31,43,0.05)] hover:border-[#7B2D43]/30 transition-all duration-700 hover:shadow-[0_36px_80px_-24px_rgba(59,31,43,0.3)] hover:-translate-y-2.5 cursor-default overflow-hidden"
-            >
-              {/* Ghost index numeral */}
-              <span className="absolute -top-3 right-5 font-display italic text-[88px] leading-none text-[#B07D3F]/[0.09] group-hover:text-[#7B2D43]/[0.12] transition-colors duration-700 select-none">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              {/* Top accent line that grows on hover */}
-              <span className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-12 rounded-b-full bg-gradient-to-r from-[#B07D3F]/0 via-[#B07D3F]/70 to-[#B07D3F]/0 group-hover:w-28 transition-all duration-700" />
-
-              <div className="relative w-16 h-16 mb-8 flex items-center justify-center">
-                <span className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#F3EADC] to-[#F2D9D2]/70 border border-[#B07D3F]/25 shadow-[0_8px_20px_-8px_rgba(176,125,63,0.4)] group-hover:rotate-6 group-hover:scale-110 group-hover:border-[#7B2D43]/35 transition-all duration-500" />
-                <service.icon className="w-6 h-6 text-[#7B2D43] relative z-10 group-hover:scale-110 transition-transform duration-500" strokeWidth={1.4} />
-              </div>
-              <h3 className="font-display text-[22px] font-semibold text-[#2B2118] mb-3 group-hover:text-[#7B2D43] transition-colors duration-500">{service.title}</h3>
-              <p className="font-body text-[15px] text-[#2B2118]/80 md:text-[#2B2118]/55 leading-relaxed">{service.desc}</p>
-
-              <span className="mt-7 inline-flex items-center gap-2 font-accent font-light text-[10px] tracking-[0.3em] uppercase text-[#B07D3F] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500">
-                Crafted to order <ArrowRight className="w-3 h-3" />
-              </span>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ─── PRODUCT DETAIL MODAL ─── */
-/* ─── PRODUCTS ─── */
-function Products({ items = PRODUCTS }) {
-  const GRADIENTS = [
-    'from-[#E2BF7E]/45 to-[#D9A5A0]/35', 'from-[#D9A5A0]/45 to-[#E2BF7E]/30', 'from-[#F3EADC] to-[#B07D3F]/30',
-    'from-[#D9A5A0]/40 to-[#7B2D43]/15', 'from-[#E2BF7E]/35 to-[#3B1F2B]/12', 'from-[#F3EADC] to-[#D9A5A0]/45',
-  ]
-
-  return (
-    <section id="products" className="py-24 md:py-36 bg-[#FBF7F0] relative overflow-hidden">
-      {!isMobile && <>
-        <div className="absolute top-[10%] -left-28 w-[26rem] h-[26rem] rounded-full bg-[#F2D9D2]/35 blur-[120px]" />
-        <div className="absolute bottom-[6%] -right-28 w-[26rem] h-[26rem] rounded-full bg-[#E2BF7E]/20 blur-[120px]" />
-      </>}
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <SectionHeading
-          eyebrow="Curated Collection"
-          title="Featured" titleItalic="Pieces"
-          subtitle="Handpicked decor essentials, each one chosen to elevate your celebration"
-        />
-
-        <motion.div
-          variants={staggerContainer} initial="hidden" whileInView="visible"
-          viewport={{ once: true, amount: 0.05 }}
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 lg:grid-cols-3 gap-7"
-        >
-          {items.map((product, i) => {
-            const pid = product.id || `home-${i}`
-            const hasImage = !!product.imageUrl
-            return (
-              <motion.div
-                key={pid} variants={fadeUp} custom={i}
-                className="group relative bg-white rounded-[1.75rem] overflow-hidden border border-[#B07D3F]/15 shadow-[0_4px_16px_rgba(59,31,43,0.05)] hover:border-[#7B2D43]/30 transition-all duration-700 hover:-translate-y-2.5 hover:shadow-[0_40px_90px_-28px_rgba(59,31,43,0.35)]"
-              >
-                <div className={`relative h-60 m-3 mb-0 rounded-[1.35rem] bg-gradient-to-br overflow-hidden ${GRADIENTS[i % GRADIENTS.length]} flex items-center justify-center`}>
-                  <span className="shine absolute top-0 bottom-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] z-10" />
-                  {hasImage ? (
-                    <img src={product.imageUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-contain group-hover:scale-110 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]" />
-                  ) : (
-                    <div className="absolute inset-0 p-6 group-hover:scale-110 group-hover:-rotate-1 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]">
-                      <ProductArt id={typeof product.id === 'number' ? product.id : i + 1} />
-                    </div>
-                  )}
-                  {product.tag && (
-                    <span className="absolute top-4 left-4 z-20 font-accent font-medium text-[9px] tracking-[0.3em] uppercase bg-gradient-to-br from-[#8E3650] to-[#6A2438] text-[#FBF7F0] px-4 py-2 rounded-full shadow-[0_8px_20px_-6px_rgba(123,45,67,0.55)]">
-                      {product.tag}
-                    </span>
-                  )}
-                </div>
-
-                <div className="p-7">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <h3 className="font-display text-[22px] font-semibold text-[#2B2118] leading-snug group-hover:text-[#7B2D43] transition-colors duration-500">{product.name}</h3>
-                    {product.price && (
-                      <span className="font-display italic text-lg text-[#B07D3F] font-semibold whitespace-nowrap mt-1">{product.price}</span>
-                    )}
-                  </div>
-                  <p className="font-body text-[15px] md:text-[14px] text-[#2B2118]/75 md:text-[#2B2118]/50 mb-6 leading-relaxed line-clamp-2">{product.desc}</p>
-
-                  <Link
-                    to={`/product/${pid}`}
-                    className="w-full font-accent text-[10px] tracking-[0.25em] uppercase py-4 px-6 rounded-full transition-all duration-400 flex items-center justify-center gap-2.5 bg-gradient-to-br from-[#8E3650] via-[#7B2D43] to-[#5C1F31] text-[#FBF7F0] font-medium shadow-[0_10px_26px_-10px_rgba(123,45,67,0.55),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_16px_38px_-10px_rgba(123,45,67,0.6)] hover:-translate-y-0.5 active:translate-y-0"
-                  >
-                    <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
-                    View & Select Style
-                  </Link>
-                </div>
-              </motion.div>
-            )
-          })}
-        </motion.div>
-      </div>
-
-    </section>
-  )
-}
 
 /* ─── GALLERY ─── */
 function Gallery({ images = GALLERY_IMAGES }) {
@@ -781,7 +547,7 @@ function Gallery({ images = GALLERY_IMAGES }) {
                   style={{ height }}
                 >
                   {hasImage ? (
-                    <img src={img.imageUrl} alt={img.label || ''} className="w-full h-full object-contain" loading="lazy" />
+                    <img src={img.imageUrl} alt={img.label || ''} className="w-full h-full object-contain" loading="lazy" decoding="async" />
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                       <TileIcon className="w-7 h-7 text-[#7B2D43]/30 group-hover:scale-110 transition-transform duration-700" strokeWidth={1} />
@@ -1285,28 +1051,36 @@ export default function Home() {
   const navigate = useNavigate()
   const [siteContent, setSiteContent] = useState({})
   const [dynamicTestimonials, setDynamicTestimonials] = useState(null)
-  const [featuredProducts, setFeaturedProducts] = useState(null)
   const [galleryImages, setGalleryImages] = useState(null)
 
+  // These four groups are independent, so they run together rather than one after
+  // another — the home page used to wait for four sequential round trips.
   useEffect(() => {
-    async function fetchContent() {
+    let cancelled = false
+
+    const loadSiteContent = async () => {
       try {
         const sections = ['hero', 'about', 'contact', 'cta', 'footer']
         const data = {}
-        await Promise.all(
-          sections.map(async (sec) => {
-            const snap = await getDoc(doc(db, 'siteContent', sec))
-            if (snap.exists()) data[sec] = snap.data()
-          })
-        )
-        setSiteContent(data)
+        await Promise.all(sections.map(async (sec) => {
+          const snap = await getDoc(doc(db, 'siteContent', sec))
+          if (snap.exists()) data[sec] = snap.data()
+        }))
+        if (!cancelled) setSiteContent(data)
       } catch { /* siteContent not available yet */ }
+    }
+
+    const loadTestimonials = async () => {
+      const fallbackToTestimonials = async () => {
+        try {
+          const items = await cachedDocs('testimonials', () => query(collection(db, 'testimonials'), orderBy('createdAt', 'desc')))
+          if (!cancelled && items.length > 0) setDynamicTestimonials(items)
+        } catch { /* testimonials not available yet */ }
+      }
 
       try {
-        const rq = query(collection(db, 'reviews'), orderBy('createdAt', 'desc'))
-        const rSnap = await getDocs(rq)
-        const homeReviews = sortReviewsByPriority(rSnap.docs
-          .map((d) => ({ id: d.id, ...d.data() }))
+        const items = await cachedDocs('reviews', () => query(collection(db, 'reviews'), orderBy('createdAt', 'desc')))
+        const homeReviews = sortReviewsByPriority(items
           .filter((review) => review.showOnHome === true && review.visible !== false))
           .map((review) => ({
             id: review.id,
@@ -1315,39 +1089,23 @@ export default function Home() {
             text: review.comment || '',
             rating: review.rating || 5,
           }))
-        if (homeReviews.length > 0) {
-          setDynamicTestimonials(homeReviews)
-        } else {
-          const tq = query(collection(db, 'testimonials'), orderBy('createdAt', 'desc'))
-          const tSnap = await getDocs(tq)
-          if (tSnap.size > 0) setDynamicTestimonials(tSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
-        }
+        if (cancelled) return
+        if (homeReviews.length > 0) setDynamicTestimonials(homeReviews)
+        else await fallbackToTestimonials()
       } catch {
-        try {
-          const tq = query(collection(db, 'testimonials'), orderBy('createdAt', 'desc'))
-          const tSnap = await getDocs(tq)
-          if (tSnap.size > 0) setDynamicTestimonials(tSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
-        } catch { /* testimonials not available yet */ }
+        await fallbackToTestimonials()
       }
+    }
 
+    const loadGallery = async () => {
       try {
-        const pq = query(collection(db, 'products'), where('featured', '==', true), limit(6))
-        const pSnap = await getDocs(pq)
-        if (pSnap.size > 0) {
-          setFeaturedProducts(pSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
-        }
-      } catch { /* featured products not available yet */ }
-
-      try {
-        const gq = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'))
-        const gSnap = await getDocs(gq)
-        if (gSnap.size > 0) {
-          const galleryItems = gSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
-          setGalleryImages(getHomeGalleryImages(galleryItems, 9))
-        }
+        const items = await cachedDocs('gallery', () => query(collection(db, 'gallery'), orderBy('createdAt', 'desc')))
+        if (!cancelled && items.length > 0) setGalleryImages(getHomeGalleryImages(items, 9))
       } catch { /* gallery not available yet */ }
     }
-    fetchContent()
+
+    Promise.all([loadSiteContent(), loadTestimonials(), loadGallery()])
+    return () => { cancelled = true }
   }, [])
 
   const handleLogout = async () => {
